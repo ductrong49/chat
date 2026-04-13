@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Messenger Mini</title>
+<title>Chat Fix</title>
 
 <style>
 body{
@@ -15,16 +15,13 @@ body{
   height:100vh;
 }
 
-/* HEADER */
 header{
   background:#0084ff;
   color:white;
   padding:12px;
   text-align:center;
-  font-weight:bold;
 }
 
-/* CHAT */
 #chat{
   flex:1;
   overflow-y:auto;
@@ -33,43 +30,36 @@ header{
   flex-direction:column;
 }
 
-/* MESSAGE */
 .msg{
   max-width:70%;
   padding:10px;
   margin:5px;
   border-radius:15px;
   word-wrap:break-word;
-  position:relative;
 }
 
-/* LEFT */
 .left{
   background:white;
   align-self:flex-start;
 }
 
-/* RIGHT */
 .right{
   background:#0084ff;
   color:white;
   align-self:flex-end;
 }
 
-/* NAME */
 .name{
   font-size:11px;
   opacity:0.7;
 }
 
-/* TIME */
 .time{
   font-size:10px;
   opacity:0.6;
   text-align:right;
 }
 
-/* INPUT */
 #inputArea{
   display:flex;
   padding:10px;
@@ -82,7 +72,6 @@ header{
   border-radius:20px;
   border:1px solid #ccc;
 }
-
 button{
   margin-left:8px;
   padding:10px;
@@ -90,14 +79,13 @@ button{
   background:#0084ff;
   color:white;
   border-radius:20px;
-  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<header>💬 Chat chung</header>
+<header>💬 Chat đã fix lỗi</header>
 
 <div id="chat"></div>
 
@@ -109,16 +97,14 @@ button{
 <script>
 const API = "https://script.google.com/macros/s/AKfycbyzpqA4D40zfukz5KGRY_eGxipH1E4seSek0-GeYdEdA0NReXpRWWjcafvbo074LEnR/exec";
 
-// LẤY TÊN (lưu local)
 let username = localStorage.getItem("chat_name");
 if(!username){
-  username = prompt("Nhập tên của bạn:");
+  username = prompt("Nhập tên:");
   localStorage.setItem("chat_name", username);
 }
 
 let lastData = "";
 
-// LOAD CHAT
 async function load(){
   const res = await fetch(API + "?t=" + Date.now());
   const data = await res.json();
@@ -131,19 +117,20 @@ async function load(){
   chat.innerHTML = "";
 
   data.forEach(item=>{
-    const isMe = item.message.startsWith(username + ":");
+    let name = "Unknown";
+    let text = item.message;
+
+    const index = item.message.indexOf(":");
+
+    if(index !== -1){
+      name = item.message.substring(0, index);
+      text = item.message.substring(index + 1);
+    }
+
+    const isMe = name === username;
 
     const div = document.createElement("div");
     div.className = "msg " + (isMe ? "right" : "left");
-
-    let text = item.message;
-    let name = "";
-
-    if(item.message.includes(":")){
-      const parts = item.message.split(":");
-      name = parts[0];
-      text = parts.slice(1).join(":");
-    }
 
     div.innerHTML = `
       ${!isMe ? `<div class="name">${name}</div>` : ""}
@@ -157,24 +144,20 @@ async function load(){
   chat.scrollTop = chat.scrollHeight;
 }
 
-// GỬI
 async function send(){
   const input = document.getElementById("text");
   const text = input.value.trim();
   if(!text) return;
 
-  const full = username + ":" + text;
-
   await fetch(API,{
     method:"POST",
-    body:new URLSearchParams({message:full})
+    body:new URLSearchParams({message: username + ":" + text})
   });
 
   input.value="";
   load();
 }
 
-// chống lỗi HTML
 function escapeHtml(text){
   return text
     .replace(/&/g,"&amp;")
@@ -182,7 +165,6 @@ function escapeHtml(text){
     .replace(/>/g,"&gt;");
 }
 
-// AUTO LOAD
 setInterval(load,2000);
 load();
 </script>

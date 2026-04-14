@@ -1,126 +1,4 @@
-<script>
-const API = "https://script.google.com/macros/s/AKfycbx9rTPj_GAlzseem_f8SAUwzVqOOBPAdMPfc1-W4CalSY0jHIAicoLvlzICB2yEBcDY/exec";
-
-let username = localStorage.getItem("chat_name");
-if(!username){
-  username = prompt("Nhập tên:");
-  localStorage.setItem("chat_name", username);
-}
-
-let lastData = "";
-
-// ✅ escape trước
-function escapeHtml(text){
-  return text
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;");
-}
-
-// ✅ rồi mới tạo link
-function linkify(text){
-  return text.replace(
-    /(https?:\/\/[^\s]+)/g,
-    '<a href="$1" target="_blank">$1</a>'
-  );
-}
-
-// ✅ FIX GIỜ CHUẨN
-function formatTime(t){
-  if(!t) return "";
-
-  // nếu dạng HH:mm:ss
-  if(typeof t === "string" && t.match(/^\d{2}:\d{2}:\d{2}$/)){
-    return t.substring(0,5);
-  }
-
-  // nếu dạng date string
-  const d = new Date(t);
-
-  // fix timezone VN
-  return d.toLocaleTimeString("vi-VN", {
-    hour:"2-digit",
-    minute:"2-digit",
-    hour12:false
-  });
-}
-
-// LOAD
-async function load(){
-  try{
-    const res = await fetch(API + "?t=" + Date.now());
-    const data = await res.json();
-
-    if(!Array.isArray(data)) return;
-
-    const json = JSON.stringify(data);
-    if(json === lastData) return;
-    lastData = json;
-
-    const top = document.getElementById("top");
-    top.innerHTML = "";
-
-    data.forEach(item=>{
-      let name = "";
-      let text = item.message || "";
-
-      const i = text.indexOf(":");
-      if(i !== -1){
-        name = text.substring(0,i);
-        text = text.substring(i+1);
-      }
-
-      const isMe = name === username;
-
-      const div = document.createElement("div");
-      div.className = "msg " + (isMe ? "right" : "left");
-
-      // 🔥 xử lý đúng thứ tự
-      let safeText = escapeHtml(text);
-      safeText = linkify(safeText);
-
-      div.innerHTML = `
-        ${!isMe ? `<div class="name">${name}</div>` : ""}
-        ${safeText}
-        <div class="time">${formatTime(item.time)}</div>
-      `;
-
-      top.appendChild(div);
-    });
-
-    top.scrollTop = top.scrollHeight;
-
-  }catch(e){
-    console.log(e);
-  }
-}
-
-// GỬI
-async function send(){
-  const input = document.getElementById("text");
-  const text = input.value.trim();
-  if(!text) return;
-
-  await fetch(API,{
-    method:"POST",
-    body:new URLSearchParams({message: username + ":" + text})
-  });
-
-  input.value="";
-  load();
-}
-
-// ENTER
-document.getElementById("text").addEventListener("keypress", function(e){
-  if(e.key === "Enter"){
-    e.preventDefault();
-    send();
-  }
-});
-
-setInterval(load,2000);
-load();
-</script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -155,30 +33,16 @@ body{
   word-wrap:break-word;
 }
 
-/* trái */
-.left{
-  background:white;
-  align-self:flex-start;
-}
+.left{background:white; align-self:flex-start;}
+.right{background:#0084ff; color:white; align-self:flex-end;}
 
-/* phải */
-.right{
-  background:#0084ff;
-  color:white;
-  align-self:flex-end;
-}
+.name{font-size:11px; opacity:0.7;}
+.time{font-size:10px; opacity:0.6; text-align:right;}
 
-.name{
-  font-size:11px;
-  opacity:0.7;
-  margin-bottom:3px;
-}
-
-.time{
-  font-size:10px;
-  opacity:0.6;
-  text-align:right;
-  margin-top:3px;
+img{
+  max-width:100%;
+  border-radius:10px;
+  margin-top:5px;
 }
 
 #bottom{
@@ -190,23 +54,22 @@ body{
 
 #text{
   flex:1;
-  padding:12px;
-  font-size:16px;
-  border-radius:25px;
+  padding:10px;
+  border-radius:20px;
   border:1px solid #ccc;
 }
 
-#sendBtn{
-  margin-left:8px;
-  padding:0 16px;
+#file{
+  display:none;
+}
+
+button{
+  margin-left:5px;
+  padding:0 12px;
   border:none;
   background:#0084ff;
   color:white;
-  border-radius:25px;
-}
-
-a{
-  color:#0068ff;
+  border-radius:20px;
 }
 </style>
 </head>
@@ -216,88 +79,93 @@ a{
 <div id="top"></div>
 
 <div id="bottom">
-  <input id="text" placeholder="Nhập tin..." autocomplete="off">
+  <input id="text" placeholder="Nhập tin...">
+  <input type="file" id="file" accept="image/*">
+  <button onclick="document.getElementById('file').click()">📷</button>
   <button onclick="send()">Gửi</button>
 </div>
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbx9rTPj_GAlzseem_f8SAUwzVqOOBPAdMPfc1-W4CalSY0jHIAicoLvlzICB2yEBcDY/exec";
 
-// 🔥 lưu tên
 let username = localStorage.getItem("chat_name");
 if(!username){
-  username = prompt("Nhập tên của bạn:");
+  username = prompt("Nhập tên:");
   localStorage.setItem("chat_name", username);
 }
 
 let lastData = "";
 
-// link clickable
+// xử lý link
 function linkify(text){
-  return text.replace(
-    /(https?:\/\/[^\s]+)/g,
-    '<a href="$1" target="_blank">$1</a>'
-  );
+  return text.replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank">$1</a>');
 }
 
 // format giờ
 function formatTime(t){
   if(!t) return "";
-  if(typeof t === "string" && t.includes(":")){
-    return t.substring(0,5);
-  }
-  const d = new Date(t);
-  return d.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
+  if(typeof t === "string" && t.includes(":")) return t.substring(0,5);
+  return new Date(t).toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
+}
+
+// escape
+function escapeHtml(text){
+  return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
 // LOAD
 async function load(){
-  try{
-    const res = await fetch(API + "?t=" + Date.now());
-    const data = await res.json();
+  const res = await fetch(API + "?t=" + Date.now());
+  const data = await res.json();
 
-    if(!Array.isArray(data)) return;
+  if(!Array.isArray(data)) return;
 
-    const json = JSON.stringify(data);
-    if(json === lastData) return;
-    lastData = json;
+  const json = JSON.stringify(data);
+  if(json === lastData) return;
+  lastData = json;
 
-    const top = document.getElementById("top");
-    top.innerHTML = "";
+  const top = document.getElementById("top");
+  top.innerHTML = "";
 
-    data.forEach(item=>{
-      let name = "";
-      let text = item.message || "";
+  data.forEach(item=>{
+    let name = "";
+    let text = item.message || "";
 
-      // tách tên
-      const i = text.indexOf(":");
-      if(i !== -1){
-        name = text.substring(0,i);
-        text = text.substring(i+1);
-      }
+    const i = text.indexOf(":");
+    if(i !== -1){
+      name = text.substring(0,i);
+      text = text.substring(i+1);
+    }
 
-      const isMe = name === username;
+    const isMe = name === username;
 
-      const div = document.createElement("div");
-      div.className = "msg " + (isMe ? "right" : "left");
+    const div = document.createElement("div");
+    div.className = "msg " + (isMe ? "right" : "left");
 
-      div.innerHTML = `
-        ${!isMe ? `<div class="name">${name}</div>` : ""}
-        ${linkify(escapeHtml(text))}
-        <div class="time">${formatTime(item.time)}</div>
-      `;
+    let content = "";
 
-      top.appendChild(div);
-    });
+    // 🔥 nếu là ảnh base64
+    if(text.startsWith("data:image")){
+      content = `<img src="${text}">`;
+    }else{
+      let safe = escapeHtml(text);
+      safe = linkify(safe);
+      content = safe;
+    }
 
-    top.scrollTop = top.scrollHeight;
+    div.innerHTML = `
+      ${!isMe ? `<div class="name">${name}</div>` : ""}
+      ${content}
+      <div class="time">${formatTime(item.time)}</div>
+    `;
 
-  }catch(e){
-    console.log(e);
-  }
+    top.appendChild(div);
+  });
+
+  top.scrollTop = top.scrollHeight;
 }
 
-// GỬI
+// GỬI TEXT
 async function send(){
   const input = document.getElementById("text");
   const text = input.value.trim();
@@ -312,6 +180,26 @@ async function send(){
   load();
 }
 
+// GỬI ẢNH
+document.getElementById("file").addEventListener("change", function(){
+  const file = this.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function(){
+    const base64 = reader.result;
+
+    await fetch(API,{
+      method:"POST",
+      body:new URLSearchParams({message: username + ":" + base64})
+    });
+
+    load();
+  };
+
+  reader.readAsDataURL(file);
+});
+
 // ENTER gửi
 document.getElementById("text").addEventListener("keypress", function(e){
   if(e.key === "Enter"){
@@ -319,14 +207,6 @@ document.getElementById("text").addEventListener("keypress", function(e){
     send();
   }
 });
-
-// chống lỗi HTML
-function escapeHtml(text){
-  return text
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;");
-}
 
 setInterval(load,2000);
 load();

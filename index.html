@@ -10,40 +10,60 @@
 
 body{
 margin:0;
-font-family:Arial;
-background:#e5ddd5;
+font-family:-apple-system,BlinkMacSystemFont,Arial;
+background:linear-gradient(to bottom,#e5ddd5,#d9e6f2);
 display:flex;
 flex-direction:column;
 height:100vh;
 }
 
+/* KHUNG CHAT */
 #top{
 flex:1;
 overflow:auto;
-padding:10px;
+padding:12px;
 display:flex;
 flex-direction:column;
 }
 
+/* TIN NHẮN */
 .msg{
-max-width:70%;
-padding:10px;
-margin:5px;
-border-radius:12px;
+max-width:75%;
+padding:10px 14px;
+margin:6px 0;
+border-radius:18px;
 word-wrap:break-word;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
+animation:fadeIn .2s ease;
 }
 
+@keyframes fadeIn{
+from{opacity:0; transform:translateY(5px);}
+to{opacity:1; transform:translateY(0);}
+}
+
+/* NGƯỜI KHÁC */
 .left{
 background:white;
 align-self:flex-start;
+border-bottom-left-radius:5px;
 }
 
+/* MÌNH */
 .right{
-background:#0084ff;
+background:linear-gradient(135deg,#0084ff,#00c6ff);
 color:white;
 align-self:flex-end;
+border-bottom-right-radius:5px;
 }
 
+/* TÊN */
+.msg b{
+font-size:12px;
+opacity:0.7;
+}
+
+/* THỜI GIAN */
 .time{
 font-size:10px;
 opacity:0.6;
@@ -51,46 +71,65 @@ text-align:right;
 margin-top:4px;
 }
 
+/* ẢNH */
 img{
 max-width:100%;
-border-radius:8px;
-margin-top:5px;
+border-radius:10px;
+margin-top:6px;
 cursor:pointer;
+transition:.2s;
 }
 
+img:hover{
+transform:scale(1.02);
+}
+
+/* KHUNG NHẬP */
 #bottom{
 display:flex;
-padding:8px;
-background:white;
+padding:10px;
+background:rgba(255,255,255,0.9);
+backdrop-filter:blur(8px);
+border-top:1px solid #ddd;
 }
 
+/* INPUT */
 #text{
 flex:1;
-padding:10px;
-border-radius:20px;
+padding:12px 14px;
+border-radius:25px;
 border:1px solid #ccc;
 font-size:16px;
+outline:none;
+}
+
+/* NÚT */
+button{
+margin-left:6px;
+padding:0 14px;
+border:none;
+background:linear-gradient(135deg,#0084ff,#00c6ff);
+color:white;
+border-radius:25px;
+font-size:15px;
+cursor:pointer;
+transition:.2s;
+}
+
+button:hover{
+opacity:0.9;
 }
 
 #file{display:none;}
 
-button{
-margin-left:5px;
-padding:0 15px;
-border:none;
-background:#0084ff;
-color:white;
-border-radius:20px;
-font-size:15px;
-}
-
+/* LINK */
 a{
 color:#0b93f6;
 word-break:break-all;
 }
 
 .right a{
-color:white;
+color:#fff;
 text-decoration:underline;
 }
 </style>
@@ -120,46 +159,36 @@ localStorage.setItem("name",username);
 
 let lastData="";
 
-// 🔐 chống lỗi HTML
+// escape
 function escapeHtml(text){
-return text
-.replace(/&/g,"&amp;")
-.replace(/</g,"&lt;")
-.replace(/>/g,"&gt;");
+return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// 🔗 link click được
+// link
 function makeLink(text){
-
 let safe=escapeHtml(text);
-
 return safe.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
-
 let href=url.startsWith("http")?url:"https://"+url;
-
 return '<a href="'+href+'" target="_blank">'+url+'</a>';
-
 });
-
 }
 
-// 🕒 giờ
+// time
 function formatTime(t){
 if(!t) return "--:--";
 if(typeof t==="string" && t.length>=5) return t.substring(0,5);
 return "--:--";
 }
 
-// 📜 kiểm tra có đang ở cuối không
+// scroll check
 function isAtBottom(el){
 return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
 }
 
+// load
 async function load(){
 
 let top=document.getElementById("top");
-
-// giữ vị trí scroll
 let stayBottom=isAtBottom(top);
 
 let res=await fetch(API+"?t="+Date.now());
@@ -192,7 +221,6 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
-// 📷 ảnh
 if(text.startsWith("data:image")){
 content='<img src="'+text+'">';
 }else{
@@ -208,16 +236,14 @@ top.appendChild(div);
 
 });
 
-// chỉ scroll khi đang ở cuối
 if(stayBottom){
 top.scrollTop=top.scrollHeight;
 }
 
 }
 
-// gửi text
+// send
 async function send(){
-
 let input=document.getElementById("text");
 let text=input.value.trim();
 if(!text) return;
@@ -233,7 +259,7 @@ input.value="";
 load();
 }
 
-// 📷 gửi ảnh
+// send image
 document.getElementById("file").addEventListener("change",function(){
 
 let file=this.files[0];
@@ -242,14 +268,12 @@ if(!file) return;
 let reader=new FileReader();
 
 reader.onload=async function(){
-
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
 message:username+":"+reader.result
 })
 });
-
 load();
 };
 
@@ -257,7 +281,7 @@ reader.readAsDataURL(file);
 
 });
 
-// enter gửi
+// enter
 document.getElementById("text").addEventListener("keypress",function(e){
 if(e.key==="Enter"){
 send();

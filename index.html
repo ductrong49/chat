@@ -2,13 +2,11 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chat Mobile</title>
 
 <style>
-*{
-  box-sizing:border-box;
-}
+*{box-sizing:border-box;}
 
 body{
   margin:0;
@@ -33,7 +31,6 @@ body{
   margin:6px 0;
   border-radius:12px;
   font-size:15px;
-  line-height:1.4;
   word-wrap:break-word;
   white-space:pre-wrap;
 }
@@ -42,7 +39,7 @@ body{
   font-size:11px;
   color:#666;
   text-align:right;
-  margin-top:5px;
+  margin-top:4px;
 }
 
 /* KHUNG NHẬP */
@@ -51,8 +48,6 @@ body{
   padding:8px;
   background:#fff;
   border-top:1px solid #ddd;
-  position:sticky;
-  bottom:0;
 }
 
 /* INPUT */
@@ -65,8 +60,8 @@ body{
   outline:none;
 }
 
-/* NÚT */
-button{
+/* NÚT GỬI */
+#sendBtn{
   margin-left:8px;
   padding:0 16px;
   border:none;
@@ -74,6 +69,8 @@ button{
   color:white;
   border-radius:25px;
   font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -84,7 +81,7 @@ button{
 
 <div id="bottom">
   <input id="text" placeholder="Nhập tin..." autocomplete="off">
-  <button onclick="send()">Gửi</button>
+  <button id="sendBtn" onclick="send()">Gửi</button>
 </div>
 
 <script>
@@ -131,11 +128,11 @@ async function send(){
     body:new URLSearchParams({message:text})
   });
 
-  input.value="";
+  input.value=""; // 🔥 xóa nội dung sau khi gửi
   load();
 }
 
-// ENTER gửi
+// ENTER cũng gửi
 document.getElementById("text").addEventListener("keypress", function(e){
   if(e.key === "Enter"){
     e.preventDefault();

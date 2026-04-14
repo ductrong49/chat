@@ -153,7 +153,7 @@ function escapeHtml(text){
 return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// link
+// link clickable
 function makeLink(text){
 let safe=escapeHtml(text);
 return safe.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
@@ -162,10 +162,20 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
-// 🔥 GIỮ NGUYÊN TIME (CỘT D)
+// 🔥 TIME LẤY ĐÚNG TỪ CỘT D (KHÔNG CONVERT DATE)
 function formatTime(t){
 if(!t) return "--:--";
-return t;
+
+if(typeof t === "string" && t.includes("T")){
+let timePart = t.split("T")[1];
+return timePart.substring(0,5);
+}
+
+if(typeof t === "string"){
+return t.substring(0,5);
+}
+
+return "--:--";
 }
 
 // scroll check
@@ -218,7 +228,7 @@ content=makeLink(text);
 div.innerHTML=
 (me?"":"<b>"+escapeHtml(name)+"</b><br>")
 +content+
-'<div class="time">'+formatTime(row.time)+'</div>'; // ✅ CHUẨN CỘT D
+'<div class="time">'+formatTime(row[3])+'</div>'; // ✅ CỘT D
 
 top.appendChild(div);
 
@@ -230,7 +240,7 @@ top.scrollTop=top.scrollHeight;
 
 }
 
-// send
+// send text
 async function send(){
 let input=document.getElementById("text");
 let text=input.value.trim();
@@ -269,7 +279,7 @@ reader.readAsDataURL(file);
 
 });
 
-// enter
+// enter send
 document.getElementById("text").addEventListener("keypress",function(e){
 if(e.key==="Enter"){
 send();

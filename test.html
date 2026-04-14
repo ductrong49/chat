@@ -17,7 +17,6 @@ flex-direction:column;
 height:100vh;
 }
 
-/* KHUNG CHAT */
 #top{
 flex:1;
 overflow:auto;
@@ -26,14 +25,12 @@ display:flex;
 flex-direction:column;
 }
 
-/* DÒNG CHAT */
 .row{
 display:flex;
 align-items:flex-end;
 margin:6px 0;
 }
 
-/* AVATAR */
 .avatar{
 width:32px;
 height:32px;
@@ -48,23 +45,19 @@ margin-right:6px;
 flex-shrink:0;
 }
 
-/* BONG BÓNG */
 .msg{
 max-width:75%;
 padding:10px 14px;
 border-radius:18px;
 word-wrap:break-word;
-position:relative;
 box-shadow:0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* NGƯỜI KHÁC */
 .left .msg{
 background:white;
 border-bottom-left-radius:4px;
 }
 
-/* MÌNH */
 .right{
 justify-content:flex-end;
 }
@@ -75,14 +68,12 @@ color:white;
 border-bottom-right-radius:4px;
 }
 
-/* TÊN */
 .name{
 font-size:11px;
 opacity:0.7;
 margin-bottom:3px;
 }
 
-/* TIME */
 .time{
 font-size:10px;
 opacity:0.6;
@@ -90,7 +81,6 @@ text-align:right;
 margin-top:4px;
 }
 
-/* ẢNH */
 img{
 max-width:100%;
 border-radius:10px;
@@ -98,7 +88,6 @@ margin-top:5px;
 cursor:pointer;
 }
 
-/* KHUNG NHẬP */
 #bottom{
 display:flex;
 padding:8px;
@@ -107,7 +96,6 @@ backdrop-filter:blur(10px);
 border-top:1px solid #ddd;
 }
 
-/* INPUT */
 #text{
 flex:1;
 padding:12px;
@@ -116,7 +104,6 @@ border:1px solid #ccc;
 font-size:16px;
 }
 
-/* NÚT */
 button{
 margin-left:5px;
 padding:0 14px;
@@ -129,7 +116,6 @@ font-size:15px;
 
 #file{display:none;}
 
-/* LINK */
 a{
 color:#0b93f6;
 word-break:break-all;
@@ -140,7 +126,6 @@ color:white;
 text-decoration:underline;
 }
 
-/* FULLSCREEN IMAGE */
 #preview{
 position:fixed;
 top:0;
@@ -188,12 +173,10 @@ localStorage.setItem("name",username);
 
 let lastData="";
 
-// escape
 function escapeHtml(t){
 return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// link
 function makeLink(t){
 let s=escapeHtml(t);
 return s.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
@@ -202,24 +185,29 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
-// time
 function formatTime(t){
 if(!t) return "--:--";
-if(t.length>=5) return t.substring(0,5);
+
+let d=new Date(t);
+if(!isNaN(d)){
+let h=d.getHours().toString().padStart(2,"0");
+let m=d.getMinutes().toString().padStart(2,"0");
+return h+":"+m;
+}
+
+if(typeof t==="string" && t.length>=5) return t.substring(0,5);
+
 return "--:--";
 }
 
-// avatar chữ cái
 function avatar(name){
 return name ? name.charAt(0).toUpperCase() : "?";
 }
 
-// scroll check
 function isAtBottom(el){
 return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
 }
 
-// zoom ảnh
 function zoom(src){
 document.getElementById("preview").style.display="flex";
 document.getElementById("previewImg").src=src;
@@ -241,7 +229,9 @@ top.innerHTML="";
 
 data.forEach(row=>{
 
-let msg=row.message||"";
+// ✅ LẤY ĐÚNG CỘT
+let msg = row[0] || "";   // cột A
+let time = row[3] || "";  // cột D
 
 let name="";
 let text=msg;
@@ -272,7 +262,7 @@ content=makeLink(text);
 bubble.innerHTML=
 (!me?'<div class="name">'+escapeHtml(name)+'</div>':"")
 +content+
-'<div class="time">'+formatTime(row.time)+'</div>';
+'<div class="time">'+formatTime(time)+'</div>';
 
 if(!me){
 let av=document.createElement("div");
@@ -292,7 +282,6 @@ top.scrollTop=top.scrollHeight;
 
 }
 
-// send
 async function send(){
 let input=document.getElementById("text");
 let text=input.value.trim();
@@ -309,7 +298,6 @@ input.value="";
 load();
 }
 
-// gửi ảnh
 document.getElementById("file").addEventListener("change",function(){
 let file=this.files[0];
 if(!file) return;
@@ -329,7 +317,6 @@ load();
 reader.readAsDataURL(file);
 });
 
-// enter
 document.getElementById("text").addEventListener("keypress",function(e){
 if(e.key==="Enter") send();
 });

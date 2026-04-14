@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat nâng cấp</title>
+<title>Chat Mobile</title>
 
 <style>
 *{box-sizing:border-box;}
@@ -37,7 +37,7 @@ body{
   font-size:11px;
   color:#666;
   text-align:right;
-  margin-top:5px;
+  margin-top:4px;
 }
 
 #bottom{
@@ -56,14 +56,18 @@ body{
   outline:none;
 }
 
-button{
+#sendBtn{
   margin-left:8px;
   padding:0 16px;
   border:none;
   background:#0084ff;
   color:white;
   border-radius:25px;
+  font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
 }
+
 a{
   color:#0068ff;
   text-decoration:underline;
@@ -77,11 +81,11 @@ a{
 
 <div id="bottom">
   <input id="text" placeholder="Nhập tin..." autocomplete="off">
-  <button onclick="send()">Gửi</button>
+  <button id="sendBtn" onclick="send()">Gửi</button>
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbyzpqA4D40zfukz5KGRY_eGxipH1E4seSek0-GeYdEdA0NReXpRWWjcafvbo074LEnR/exec";
+const API = "https://script.google.com/macros/s/AKfycbx9rTPj_GAlzseem_f8SAUwzVqOOBPAdMPfc1-W4CalSY0jHIAicoLvlzICB2yEBcDY/exec";
 
 let lastData = "";
 
@@ -93,18 +97,21 @@ function linkify(text){
   );
 }
 
-// 🔥 format lại giờ
+// 🔥 format giờ chuẩn HH:mm
 function formatTime(t){
   if(!t) return "";
 
-  // nếu đã là dạng HH:mm:ss thì lấy HH:mm
-  if(t.includes(":")){
+  // nếu dạng HH:mm:ss → lấy HH:mm
+  if(typeof t === "string" && t.includes(":")){
     return t.substring(0,5);
   }
 
-  // fallback nếu là timestamp
+  // nếu là dạng date
   const d = new Date(t);
-  return d.toLocaleTimeString("vi-VN", {hour:'2-digit', minute:'2-digit'});
+  return d.toLocaleTimeString("vi-VN", {
+    hour:"2-digit",
+    minute:"2-digit"
+  });
 }
 
 // LOAD
@@ -131,7 +138,7 @@ async function load(){
     top.scrollTop = top.scrollHeight;
 
   }catch(e){
-    console.log(e);
+    console.log("Lỗi load:", e);
   }
 }
 

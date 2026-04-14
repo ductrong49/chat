@@ -59,9 +59,7 @@ img{
   border:1px solid #ccc;
 }
 
-#file{
-  display:none;
-}
+#file{display:none;}
 
 button{
   margin-left:5px;
@@ -86,7 +84,7 @@ button{
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbx9rTPj_GAlzseem_f8SAUwzVqOOBPAdMPfc1-W4CalSY0jHIAicoLvlzICB2yEBcDY/exec";
+const API = "DÁN_LINK_API_MỚI_CỦA_BẠN";
 
 let username = localStorage.getItem("chat_name");
 if(!username){
@@ -96,21 +94,30 @@ if(!username){
 
 let lastData = "";
 
-// xử lý link
-function linkify(text){
-  return text.replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank">$1</a>');
-}
-
-// format giờ
-function formatTime(t){
-  if(!t) return "";
-  if(typeof t === "string" && t.includes(":")) return t.substring(0,5);
-  return new Date(t).toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
-}
-
 // escape
 function escapeHtml(text){
-  return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return text
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+
+// link clickable
+function makeLink(text){
+  return text.replace(/(https?:\/\/[^\s]+)/g, function(url){
+    return '<a href="'+url+'" target="_blank" style="color:#0b93f6;">'+url+'</a>';
+  });
+}
+
+// format giờ chuẩn
+function formatTime(t){
+  if(!t) return "";
+
+  if(typeof t === "string" && /^\d{2}:\d{2}:\d{2}$/.test(t)){
+    return t.slice(0,5);
+  }
+
+  return "";
 }
 
 // LOAD
@@ -144,12 +151,12 @@ async function load(){
 
     let content = "";
 
-    // 🔥 nếu là ảnh base64
+    // ảnh
     if(text.startsWith("data:image")){
       content = `<img src="${text}">`;
     }else{
       let safe = escapeHtml(text);
-      safe = linkify(safe);
+      safe = makeLink(safe);
       content = safe;
     }
 
@@ -165,7 +172,7 @@ async function load(){
   top.scrollTop = top.scrollHeight;
 }
 
-// GỬI TEXT
+// gửi text
 async function send(){
   const input = document.getElementById("text");
   const text = input.value.trim();
@@ -180,27 +187,26 @@ async function send(){
   load();
 }
 
-// GỬI ẢNH
+// gửi ảnh
 document.getElementById("file").addEventListener("change", function(){
   const file = this.files[0];
   if(!file) return;
 
   const reader = new FileReader();
   reader.onload = async function(){
-    const base64 = reader.result;
-
     await fetch(API,{
       method:"POST",
-      body:new URLSearchParams({message: username + ":" + base64})
+      body:new URLSearchParams({
+        message: username + ":" + reader.result
+      })
     });
-
     load();
   };
 
   reader.readAsDataURL(file);
 });
 
-// ENTER gửi
+// enter gửi
 document.getElementById("text").addEventListener("keypress", function(e){
   if(e.key === "Enter"){
     e.preventDefault();

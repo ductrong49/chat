@@ -162,10 +162,10 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
-// 🔥 TIME: LẤY NGUYÊN GIÁ TRỊ CỘT D (KHÔNG FORMAT)
+// 🔥 GIỮ NGUYÊN TIME (CỘT D)
 function formatTime(t){
 if(!t) return "--:--";
-return t; // giữ nguyên 100%
+return t;
 }
 
 // scroll check
@@ -218,7 +218,7 @@ content=makeLink(text);
 div.innerHTML=
 (me?"":"<b>"+escapeHtml(name)+"</b><br>")
 +content+
-'<div class="time">'+formatTime(row.time || row[3])+'</div>'; // ✅ LẤY ĐÚNG CỘT D
+'<div class="time">'+formatTime(row.time)+'</div>'; // ✅ CHUẨN CỘT D
 
 top.appendChild(div);
 

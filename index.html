@@ -6,6 +6,8 @@
 <title>Chat Mini</title>
 
 <style>
+*{box-sizing:border-box;}
+
 body{
 margin:0;
 font-family:Arial;
@@ -67,11 +69,10 @@ flex:1;
 padding:10px;
 border-radius:20px;
 border:1px solid #ccc;
+font-size:16px;
 }
 
-#file{
-display:none;
-}
+#file{display:none;}
 
 button{
 margin-left:5px;
@@ -80,6 +81,7 @@ border:none;
 background:#0084ff;
 color:white;
 border-radius:20px;
+font-size:15px;
 }
 
 a{
@@ -118,11 +120,27 @@ localStorage.setItem("name",username);
 
 let lastData="";
 
+// 🔐 chống lỗi HTML
+function escapeHtml(text){
+return text
+.replace(/&/g,"&amp;")
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;");
+}
+
 // 🔗 link click được
 function makeLink(text){
-return text.replace(/(https?:\/\/[^\s]+)/g,function(url){
-return '<a href="'+url+'" target="_blank">'+url+'</a>';
+
+let safe=escapeHtml(text);
+
+return safe.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
+
+let href=url.startsWith("http")?url:"https://"+url;
+
+return '<a href="'+href+'" target="_blank">'+url+'</a>';
+
 });
+
 }
 
 // 🕒 giờ
@@ -141,7 +159,7 @@ async function load(){
 
 let top=document.getElementById("top");
 
-// 🔥 kiểm tra trước khi load
+// giữ vị trí scroll
 let stayBottom=isAtBottom(top);
 
 let res=await fetch(API+"?t="+Date.now());
@@ -182,7 +200,7 @@ content=makeLink(text);
 }
 
 div.innerHTML=
-(me?"":"<b>"+name+"</b><br>")
+(me?"":"<b>"+escapeHtml(name)+"</b><br>")
 +content+
 '<div class="time">'+formatTime(row.time)+'</div>';
 
@@ -190,7 +208,7 @@ top.appendChild(div);
 
 });
 
-// 🔥 chỉ scroll khi đang ở cuối
+// chỉ scroll khi đang ở cuối
 if(stayBottom){
 top.scrollTop=top.scrollHeight;
 }
@@ -246,7 +264,7 @@ send();
 }
 });
 
-setInterval(load,2000);
+setInterval(load,1000);
 load();
 
 </script>

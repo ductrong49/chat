@@ -17,7 +17,6 @@ flex-direction:column;
 height:100vh;
 }
 
-/* KHUNG CHAT */
 #top{
 flex:1;
 overflow:auto;
@@ -26,7 +25,6 @@ display:flex;
 flex-direction:column;
 }
 
-/* TIN NHẮN */
 .msg{
 max-width:75%;
 padding:10px 14px;
@@ -42,14 +40,12 @@ from{opacity:0; transform:translateY(5px);}
 to{opacity:1; transform:translateY(0);}
 }
 
-/* NGƯỜI KHÁC */
 .left{
 background:white;
 align-self:flex-start;
 border-bottom-left-radius:5px;
 }
 
-/* MÌNH */
 .right{
 background:linear-gradient(135deg,#0084ff,#00c6ff);
 color:white;
@@ -57,13 +53,11 @@ align-self:flex-end;
 border-bottom-right-radius:5px;
 }
 
-/* TÊN */
 .msg b{
 font-size:12px;
 opacity:0.7;
 }
 
-/* THỜI GIAN */
 .time{
 font-size:10px;
 opacity:0.6;
@@ -71,7 +65,6 @@ text-align:right;
 margin-top:4px;
 }
 
-/* ẢNH */
 img{
 max-width:100%;
 border-radius:10px;
@@ -84,7 +77,6 @@ img:hover{
 transform:scale(1.02);
 }
 
-/* KHUNG NHẬP */
 #bottom{
 display:flex;
 padding:10px;
@@ -93,7 +85,6 @@ backdrop-filter:blur(8px);
 border-top:1px solid #ddd;
 }
 
-/* INPUT */
 #text{
 flex:1;
 padding:12px 14px;
@@ -103,7 +94,6 @@ font-size:16px;
 outline:none;
 }
 
-/* NÚT */
 button{
 margin-left:6px;
 padding:0 14px;
@@ -122,7 +112,6 @@ opacity:0.9;
 
 #file{display:none;}
 
-/* LINK */
 a{
 color:#0b93f6;
 word-break:break-all;
@@ -173,22 +162,10 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
-// time (LẤY TỪ CỘT D)
+// 🔥 TIME: LẤY NGUYÊN GIÁ TRỊ CỘT D (KHÔNG FORMAT)
 function formatTime(t){
 if(!t) return "--:--";
-
-let d = new Date(t);
-if(!isNaN(d)){
-let h = d.getHours().toString().padStart(2,"0");
-let m = d.getMinutes().toString().padStart(2,"0");
-return h+":"+m;
-}
-
-if(typeof t==="string" && t.length>=5){
-return t.substring(0,5);
-}
-
-return "--:--";
+return t; // giữ nguyên 100%
 }
 
 // scroll check
@@ -241,7 +218,7 @@ content=makeLink(text);
 div.innerHTML=
 (me?"":"<b>"+escapeHtml(name)+"</b><br>")
 +content+
-'<div class="time">'+formatTime(row[3])+'</div>'; // ✅ CỘT D
+'<div class="time">'+formatTime(row.time || row[3])+'</div>'; // ✅ LẤY ĐÚNG CỘT D
 
 top.appendChild(div);
 

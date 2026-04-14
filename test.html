@@ -6,7 +6,6 @@
 <title>Chat Mini</title>
 
 <style>
-
 body{
 margin:0;
 font-family:Arial;
@@ -47,11 +46,14 @@ align-self:flex-end;
 font-size:10px;
 opacity:0.6;
 text-align:right;
+margin-top:4px;
 }
 
 img{
 max-width:100%;
 border-radius:8px;
+margin-top:5px;
+cursor:pointer;
 }
 
 #bottom{
@@ -67,6 +69,10 @@ border-radius:20px;
 border:1px solid #ccc;
 }
 
+#file{
+display:none;
+}
+
 button{
 margin-left:5px;
 padding:0 15px;
@@ -78,8 +84,13 @@ border-radius:20px;
 
 a{
 color:#0b93f6;
+word-break:break-all;
 }
 
+.right a{
+color:white;
+text-decoration:underline;
+}
 </style>
 </head>
 
@@ -89,6 +100,8 @@ color:#0b93f6;
 
 <div id="bottom">
 <input id="text" placeholder="Nhập tin...">
+<input type="file" id="file" accept="image/*">
+<button onclick="document.getElementById('file').click()">📷</button>
 <button onclick="send()">Gửi</button>
 </div>
 
@@ -103,39 +116,46 @@ username=prompt("Tên của bạn:");
 localStorage.setItem("name",username);
 }
 
+let lastData="";
+
+// 🔗 link click được
 function makeLink(text){
-
 return text.replace(/(https?:\/\/[^\s]+)/g,function(url){
-
 return '<a href="'+url+'" target="_blank">'+url+'</a>';
-
 });
-
 }
 
+// 🕒 giờ
 function formatTime(t){
+if(!t) return "--:--";
+if(typeof t==="string" && t.length>=5) return t.substring(0,5);
+return "--:--";
+}
 
-if(!t) return "";
-
-if(t.length>=5) return t.substring(0,5);
-
-return t;
-
+// 📜 kiểm tra có đang ở cuối không
+function isAtBottom(el){
+return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
 }
 
 async function load(){
 
-let res=await fetch(API+"?t="+Date.now());
+let top=document.getElementById("top");
 
+// 🔥 kiểm tra trước khi load
+let stayBottom=isAtBottom(top);
+
+let res=await fetch(API+"?t="+Date.now());
 let data=await res.json();
 
-let top=document.getElementById("top");
+let json=JSON.stringify(data);
+if(json===lastData) return;
+lastData=json;
 
 top.innerHTML="";
 
 data.forEach(row=>{
 
-let msg=row.message;
+let msg=row.message||"";
 
 let name="";
 let text=msg;
@@ -150,43 +170,38 @@ text=msg.substring(i+1);
 let me=name==username;
 
 let div=document.createElement("div");
-
 div.className="msg "+(me?"right":"left");
 
 let content="";
 
+// 📷 ảnh
 if(text.startsWith("data:image")){
-
 content='<img src="'+text+'">';
-
 }else{
-
 content=makeLink(text);
-
 }
 
 div.innerHTML=
-
 (me?"":"<b>"+name+"</b><br>")
-
 +content+
-
 '<div class="time">'+formatTime(row.time)+'</div>';
 
 top.appendChild(div);
 
 });
 
+// 🔥 chỉ scroll khi đang ở cuối
+if(stayBottom){
 top.scrollTop=top.scrollHeight;
+}
 
 }
 
+// gửi text
 async function send(){
 
 let input=document.getElementById("text");
-
 let text=input.value.trim();
-
 if(!text) return;
 
 await fetch(API,{
@@ -197,21 +212,41 @@ message:username+":"+text
 });
 
 input.value="";
+load();
+}
+
+// 📷 gửi ảnh
+document.getElementById("file").addEventListener("change",function(){
+
+let file=this.files[0];
+if(!file) return;
+
+let reader=new FileReader();
+
+reader.onload=async function(){
+
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message:username+":"+reader.result
+})
+});
 
 load();
+};
 
-}
-
-document.getElementById("text").addEventListener("keypress",function(e){
-
-if(e.key==="Enter"){
-send();
-}
+reader.readAsDataURL(file);
 
 });
 
-setInterval(load,2000);
+// enter gửi
+document.getElementById("text").addEventListener("keypress",function(e){
+if(e.key==="Enter"){
+send();
+}
+});
 
+setInterval(load,2000);
 load();
 
 </script>

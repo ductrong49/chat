@@ -3,97 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Zalo Style</title>
+<title>Chat 2 cửa sổ</title>
 
 <style>
 body{
   margin:0;
   font-family: Arial;
-  background:#f0f2f5;
   display:flex;
   flex-direction:column;
   height:100vh;
 }
 
-header{
-  background:#0084ff;
-  color:white;
-  padding:12px;
-  text-align:center;
-  font-weight:bold;
-}
-
-#chat{
+/* KHUNG TRÊN (HIỂN THỊ) */
+#top{
   flex:1;
   overflow-y:auto;
   padding:10px;
-  display:flex;
-  flex-direction:column;
+  background:#f0f2f5;
 }
 
-/* tin nhắn */
+/* TIN NHẮN */
 .msg{
-  max-width:75%;
-  padding:10px;
-  margin:5px;
-  border-radius:12px;
-  word-wrap:break-word;
-}
-
-/* trái */
-.left{
   background:white;
-  align-self:flex-start;
-}
-
-/* phải */
-.right{
-  background:#0084ff;
-  color:white;
-  align-self:flex-end;
+  padding:10px;
+  margin:6px 0;
+  border-radius:10px;
+  word-wrap:break-word;
+  white-space:pre-wrap;
 }
 
 .time{
   font-size:10px;
-  opacity:0.6;
+  color:#666;
   text-align:right;
-  margin-top:3px;
+  margin-top:4px;
 }
 
-#inputArea{
-  display:flex;
+/* KHUNG DƯỚI (NHẬP) */
+#bottom{
+  border-top:1px solid #ccc;
   padding:10px;
   background:#fff;
-  border-top:1px solid #ddd;
 }
 
 #text{
-  flex:1;
-  padding:10px;
-  border-radius:20px;
+  width:100%;
+  padding:12px;
+  font-size:16px;
+  border-radius:8px;
   border:1px solid #ccc;
-}
-
-button{
-  margin-left:8px;
-  padding:10px;
-  border:none;
-  background:#0084ff;
-  color:white;
-  border-radius:20px;
+  outline:none;
 }
 </style>
 </head>
 
 <body>
 
-<header>💬 Chat hôm nay</header>
+<!-- HIỂN THỊ -->
+<div id="top"></div>
 
-<div id="chat"></div>
-
-<div id="inputArea">
-  <input id="text" placeholder="Nhập tin..." onkeypress="if(event.key==='Enter') send()">
-  <button onclick="send()">Gửi</button>
+<!-- NHẬP -->
+<div id="bottom">
+  <input id="text" placeholder="Nhập tin nhắn rồi nhấn Enter...">
 </div>
 
 <script>
@@ -101,54 +72,62 @@ const API = "https://script.google.com/macros/s/AKfycbyzpqA4D40zfukz5KGRY_eGxipH
 
 let lastData = "";
 
-// load dữ liệu
+// LOAD TIN NHẮN
 async function load(){
   try{
-    const res = await fetch(API + "?t=" + Date.now());
+    const res = await fetch(API + "?t=" + Date.now()); // chống cache
     const data = await res.json();
+
+    if(!Array.isArray(data)) return;
 
     const json = JSON.stringify(data);
     if(json === lastData) return;
     lastData = json;
 
-    const chat = document.getElementById("chat");
-    chat.innerHTML = "";
+    const top = document.getElementById("top");
 
-    data.forEach((item, index)=>{
-      const div = document.createElement("div");
+    top.innerHTML = data.map(item => `
+      <div class="msg">
+        ${escapeHtml(item.message || "")}
+        <div class="time">${item.time || ""}</div>
+      </div>
+    `).join("");
 
-      // xen trái phải cho giống chat
-      div.className = "msg " + (index % 2 === 0 ? "left" : "right");
-
-      div.innerHTML = `
-        ${escapeHtml(item.message)}
-        <div class="time">${item.time}</div>
-      `;
-
-      chat.appendChild(div);
-    });
-
-    chat.scrollTop = chat.scrollHeight;
+    // tự scroll xuống cuối
+    top.scrollTop = top.scrollHeight;
 
   }catch(e){
-    console.log(e);
+    console.log("Lỗi load:", e);
   }
 }
 
-// gửi tin
+// GỬI TIN
 async function send(){
   const input = document.getElementById("text");
   const text = input.value.trim();
   if(!text) return;
 
-  await fetch(API,{
-    method:"POST",
-    body:new URLSearchParams({message:text})
-  });
+  try{
+    await fetch(API,{
+      method:"POST",
+      body:new URLSearchParams({message:text})
+    });
 
-  input.value="";
-  load();
+    input.value = ""; // 🔥 xóa nội dung sau khi gửi
+    load();
+
+  }catch(e){
+    alert("Gửi lỗi!");
+  }
 }
+
+// ENTER để gửi
+document.getElementById("text").addEventListener("keypress", function(e){
+  if(e.key === "Enter"){
+    e.preventDefault();
+    send();
+  }
+});
 
 // chống lỗi HTML
 function escapeHtml(text){
@@ -158,6 +137,7 @@ function escapeHtml(text){
     .replace(/>/g,"&gt;");
 }
 
+// auto load
 setInterval(load,2000);
 load();
 </script>

@@ -7,14 +7,16 @@
 
 <style>
 *{box-sizing:border-box;}
+
 body{
 margin:0;
-font-family:Arial;
-background:#e5ddd5;
+font-family:-apple-system,BlinkMacSystemFont,Arial;
+background:linear-gradient(to bottom,#e5ddd5,#d9e6f2);
 display:flex;
 flex-direction:column;
 height:100vh;
 }
+
 #top{
 flex:1;
 overflow:auto;
@@ -22,22 +24,99 @@ padding:12px;
 display:flex;
 flex-direction:column;
 }
+
 .msg{
 max-width:75%;
-padding:10px;
+padding:10px 14px;
 margin:6px 0;
 border-radius:18px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
+word-wrap:break-word;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
 }
-.left{background:#fff;align-self:flex-start;}
-.right{background:#0084ff;color:#fff;align-self:flex-end;}
-.time{font-size:10px;opacity:0.6;text-align:right;}
-img{max-width:70%;border-radius:10px;margin-top:6px;}
-.fileBox{background:#eee;padding:6px;border-radius:6px;margin-top:6px;}
-#bottom{display:flex;padding:10px;background:#fff;}
-#text{flex:1;padding:10px;border-radius:20px;border:1px solid #ccc;}
-button{margin-left:5px;padding:0 12px;border:none;background:#0084ff;color:#fff;border-radius:20px;}
+
+.left{
+background:white;
+align-self:flex-start;
+border-bottom-left-radius:5px;
+}
+
+.right{
+background:linear-gradient(135deg,#0084ff,#00c6ff);
+color:white;
+align-self:flex-end;
+border-bottom-right-radius:5px;
+}
+
+.msg b{
+font-size:12px;
+opacity:0.7;
+}
+
+.time{
+font-size:10px;
+opacity:0.6;
+text-align:right;
+margin-top:4px;
+}
+
+img{
+max-width:100%;
+border-radius:10px;
+margin-top:6px;
+}
+
+.fileBox{
+margin-top:6px;
+padding:8px;
+background:#f1f1f1;
+border-radius:8px;
+font-size:14px;
+}
+
+.fileBox a{
+color:#007bff;
+text-decoration:none;
+}
+
+.right .fileBox{
+background:rgba(255,255,255,0.2);
+}
+
+#bottom{
+display:flex;
+padding:10px;
+background:rgba(255,255,255,0.9);
+border-top:1px solid #ddd;
+}
+
+#text{
+flex:1;
+padding:12px;
+border-radius:25px;
+border:1px solid #ccc;
+font-size:16px;
+}
+
+button{
+margin-left:6px;
+padding:0 14px;
+border:none;
+background:#0084ff;
+color:white;
+border-radius:25px;
+}
+
 #file,#file2{display:none;}
+
+a{
+color:#0b93f6;
+word-break:break-all;
+}
+
+.right a{
+color:#fff;
+text-decoration:underline;
+}
 </style>
 </head>
 
@@ -47,53 +126,71 @@ button{margin-left:5px;padding:0 12px;border:none;background:#0084ff;color:#fff;
 
 <div id="bottom">
 <input id="text" placeholder="Nhập tin...">
+
 <input type="file" id="file" accept="image/*">
-<button onclick="file.click()">📷</button>
+<button onclick="document.getElementById('file').click()">📷</button>
+
 <input type="file" id="file2">
-<button onclick="file2.click()">📎</button>
+<button onclick="document.getElementById('file2').click()">📎</button>
+
 <button onclick="send()">Gửi</button>
 </div>
 
 <script>
 
-const API="https://script.googleusercontent.com/macros/echo?user_content_key=AWDtjMXBUdObI4OINTm20h9wbTELPIfD9xMmpBH3Fhb3mdn8mQXlcafbVb9oX8WR9DRISNxA7LDrjdpIVo9yP6JtVlYVq9U7tKmTNBCD4NyV9X6jHF6MMLxuY8-ME4DjPCC9Ij2MjW6endyYcHCvmGzNqsOaaQrwmT80pceXBtOGvS17SPz2Mimoip8FNmOXB8KV0dNar_pOzLtvfVOIuWZaImohmqJvICjvF1rKsebjsDjhTPQPuBLn2vv08aWlu5PJBiPHJ041GvRoD-oTp-Bbk5NK0erP4A&lib=MG_09ckd-CbzC-16MUE28MvUJQey_UtJ9";
+const API="https://script.googleusercontent.com/macros/echo?user_content_key=AWDtjMVwr6qSxl2OPEiMszuf6Mlb8PhWC0Yv_zq28R4xORqFtx0ST0P6-MrTBHMTVAIQbwXI0VnAv_fCBQl9jSv2KZbLMI8HcbogV2WPDTwNHXriMl--La3-gvtEseKEsl7F1Ca8toEPch92vNXVA9mh8hssTEKNXWT6qujGhelRBmiKuocpUAcXnENTT5i9qWSSwgY7TIx7yHyUKlSx-9fF_3F53yqACcFnbY3RYrN3Vel15GJCoVEiBwcLXwkYRFR3hfXlaekUZNY_s3wCnoyU4JcATEZJQg&lib=MG_09ckd-CbzC-16MUE28MvUJQey_UtJ9";
 
 let username=localStorage.getItem("name");
 if(!username){
-username=prompt("Tên:");
+username=prompt("Tên của bạn:");
 localStorage.setItem("name",username);
 }
 
-let last="";
+let lastData="";
 
-// gửi dữ liệu chuẩn
-async function postData(msg){
-
-let form=new FormData();
-form.append("message",msg);
-
-await fetch(API,{
-method:"POST",
-body:form
-});
-
+// escape
+function escapeHtml(t){
+return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// load
+// link
+function makeLink(t){
+let s=escapeHtml(t);
+return s.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
+let href=url.startsWith("http")?url:"https://"+url;
+return '<a href="'+href+'" target="_blank">'+url+'</a>';
+});
+}
+
+// 🔥 TIME: LẤY NGUYÊN GIÁ TRỊ CỘT D
+function formatTime(t){
+return t || "--:--";
+}
+
+// scroll
+function isAtBottom(el){
+return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+}
+
+// LOAD
 async function load(){
+
+let top=document.getElementById("top");
+let stayBottom=isAtBottom(top);
 
 let res=await fetch(API+"?t="+Date.now());
 let data=await res.json();
 
 let json=JSON.stringify(data);
-if(json===last) return;
-last=json;
+if(json===lastData) return;
+lastData=json;
 
 top.innerHTML="";
 
 data.forEach(row=>{
 
 let msg=row.message||"";
+
 let name="";
 let text=msg;
 
@@ -110,81 +207,109 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
-// FILE
-if(text.startsWith("FILE|")){
-let p=text.split("|");
-let file=p[1];
-let url=p[2];
+// ảnh
+if(text.startsWith("data:image")){
+content='<img src="'+text+'">';
 
-if(file.match(/\.(jpg|png|jpeg|gif)/i)){
-content='<img src="'+url+'">';
-}else{
-content='<div class="fileBox">📎 '+file+'<br><a href="'+url+'" target="_blank">Mở</a></div>';
-}
+// file
+}else if(text.startsWith("FILE|")){
+let parts=text.split("|");
+let filename=parts[1];
+let filedata=parts[2];
+
+content=`
+<div class="fileBox">
+📎 ${escapeHtml(filename)}<br>
+<a href="${filedata}" download="${filename}">Tải xuống</a>
+</div>
+`;
 
 }else{
-content=text;
+content=makeLink(text);
 }
 
 div.innerHTML=
-(me?"":"<b>"+name+"</b><br>")+
-content+
-'<div class="time">'+(row.time||"--:--")+'</div>';
+(me?"":"<b>"+escapeHtml(name)+"</b><br>")
++content+
+'<div class="time">'+formatTime(row.time)+'</div>';
 
 top.appendChild(div);
 
 });
 
+if(stayBottom){
 top.scrollTop=top.scrollHeight;
+}
 
 }
 
 // gửi text
 async function send(){
+let input=document.getElementById("text");
+let text=input.value.trim();
+if(!text) return;
 
-let t=text.value.trim();
-if(!t) return;
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message:username+":"+text
+})
+});
 
-await postData(username+":"+t);
-
-text.value="";
+input.value="";
 load();
 }
 
-// gửi file (chuẩn)
-function sendFile(file){
+// gửi ảnh
+document.getElementById("file").addEventListener("change",function(){
+
+let file=this.files[0];
+if(!file) return;
 
 let reader=new FileReader();
 
-reader.onload=function(){
-
-let base64=reader.result.split(",")[1];
-
-postData(
-username+":BASE64|"+file.name+"|"+file.type+"|"+base64
-);
-
+reader.onload=async function(){
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message:username+":"+reader.result
+})
+});
+load();
 };
 
 reader.readAsDataURL(file);
-}
 
-// ảnh
-file.onchange=function(){
-if(this.files[0]) sendFile(this.files[0]);
-this.value="";
-}
+});
 
-// file
-file2.onchange=function(){
-if(this.files[0]) sendFile(this.files[0]);
-this.value="";
-}
+// gửi file
+document.getElementById("file2").addEventListener("change",function(){
+
+let file=this.files[0];
+if(!file) return;
+
+let reader=new FileReader();
+
+reader.onload=async function(){
+
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message:username+":FILE|"+file.name+"|"+reader.result
+})
+});
+
+load();
+};
+
+reader.readAsDataURL(file);
+
+});
 
 // enter
-text.onkeypress=function(e){
+document.getElementById("text").addEventListener("keypress",function(e){
 if(e.key==="Enter") send();
-}
+});
 
 setInterval(load,1000);
 load();

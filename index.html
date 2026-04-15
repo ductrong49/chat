@@ -138,7 +138,7 @@ text-decoration:underline;
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbzld6Ap1Yb8azgylAmvYztcMSpWTLsyIS_btHmcTfXEg47OWsQV608BRr0srfwkFBG6/exec";
+const API="https://script.google.com/macros/s/AKfycbw1dx_MIJtO91_4t-05iTUKU5wG6_g7A1McauyxxEk5FgrsEFDrDti6wsUNV_Q4a205/exec";
 
 let username=localStorage.getItem("name");
 if(!username){
@@ -162,16 +162,12 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
-// TIME từ cột D
+// 🔥 TIME: LẤY NGUYÊN GIÁ TRỊ CỘT D
 function formatTime(t){
-if(!t) return "--:--";
-if(typeof t==="string" && t.includes("T")){
-return t.split("T")[1].substring(0,5);
-}
-return t.substring(0,5);
+return t || "--:--";
 }
 
-// scroll check
+// scroll
 function isAtBottom(el){
 return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
 }
@@ -211,20 +207,20 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
-// 📷 ảnh
+// ảnh
 if(text.startsWith("data:image")){
 content='<img src="'+text+'">';
 
-// 📎 file
+// file
 }else if(text.startsWith("FILE|")){
 let parts=text.split("|");
 let filename=parts[1];
-let data=parts[2];
+let filedata=parts[2];
 
 content=`
 <div class="fileBox">
 📎 ${escapeHtml(filename)}<br>
-<a href="${data}" download="${filename}">Tải xuống</a>
+<a href="${filedata}" download="${filename}">Tải xuống</a>
 </div>
 `;
 
@@ -235,7 +231,7 @@ content=makeLink(text);
 div.innerHTML=
 (me?"":"<b>"+escapeHtml(name)+"</b><br>")
 +content+
-'<div class="time">'+formatTime(row[3])+'</div>';
+'<div class="time">'+formatTime(row.time)+'</div>';
 
 top.appendChild(div);
 
@@ -264,7 +260,7 @@ input.value="";
 load();
 }
 
-// 📷 gửi ảnh
+// gửi ảnh
 document.getElementById("file").addEventListener("change",function(){
 
 let file=this.files[0];
@@ -286,7 +282,7 @@ reader.readAsDataURL(file);
 
 });
 
-// 📎 gửi file
+// gửi file
 document.getElementById("file2").addEventListener("change",function(){
 
 let file=this.files[0];
@@ -313,302 +309,6 @@ reader.readAsDataURL(file);
 // enter
 document.getElementById("text").addEventListener("keypress",function(e){
 if(e.key==="Enter") send();
-});
-
-setInterval(load,1000);
-load();
-
-</script>
-
-</body>
-</html><!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Mini</title>
-
-<style>
-*{box-sizing:border-box;}
-
-body{
-margin:0;
-font-family:-apple-system,BlinkMacSystemFont,Arial;
-background:linear-gradient(to bottom,#e5ddd5,#d9e6f2);
-display:flex;
-flex-direction:column;
-height:100vh;
-}
-
-/* KHUNG CHAT */
-#top{
-flex:1;
-overflow:auto;
-padding:12px;
-display:flex;
-flex-direction:column;
-}
-
-/* TIN NHẮN */
-.msg{
-max-width:75%;
-padding:10px 14px;
-margin:6px 0;
-border-radius:18px;
-word-wrap:break-word;
-box-shadow:0 2px 6px rgba(0,0,0,0.08);
-animation:fadeIn .2s ease;
-}
-
-@keyframes fadeIn{
-from{opacity:0; transform:translateY(5px);}
-to{opacity:1; transform:translateY(0);}
-}
-
-/* NGƯỜI KHÁC */
-.left{
-background:white;
-align-self:flex-start;
-border-bottom-left-radius:5px;
-}
-
-/* MÌNH */
-.right{
-background:linear-gradient(135deg,#0084ff,#00c6ff);
-color:white;
-align-self:flex-end;
-border-bottom-right-radius:5px;
-}
-
-/* TÊN */
-.msg b{
-font-size:12px;
-opacity:0.7;
-}
-
-/* THỜI GIAN */
-.time{
-font-size:10px;
-opacity:0.6;
-text-align:right;
-margin-top:4px;
-}
-
-/* ẢNH */
-img{
-max-width:100%;
-border-radius:10px;
-margin-top:6px;
-cursor:pointer;
-transition:.2s;
-}
-
-img:hover{
-transform:scale(1.02);
-}
-
-/* KHUNG NHẬP */
-#bottom{
-display:flex;
-padding:10px;
-background:rgba(255,255,255,0.9);
-backdrop-filter:blur(8px);
-border-top:1px solid #ddd;
-}
-
-/* INPUT */
-#text{
-flex:1;
-padding:12px 14px;
-border-radius:25px;
-border:1px solid #ccc;
-font-size:16px;
-outline:none;
-}
-
-/* NÚT */
-button{
-margin-left:6px;
-padding:0 14px;
-border:none;
-background:linear-gradient(135deg,#0084ff,#00c6ff);
-color:white;
-border-radius:25px;
-font-size:15px;
-cursor:pointer;
-transition:.2s;
-}
-
-button:hover{
-opacity:0.9;
-}
-
-#file{display:none;}
-
-/* LINK */
-a{
-color:#0b93f6;
-word-break:break-all;
-}
-
-.right a{
-color:#fff;
-text-decoration:underline;
-}
-</style>
-</head>
-
-<body>
-
-<div id="top"></div>
-
-<div id="bottom">
-<input id="text" placeholder="Nhập tin...">
-<input type="file" id="file" accept="image/*">
-<button onclick="document.getElementById('file').click()">📷</button>
-<button onclick="send()">Gửi</button>
-</div>
-
-<script>
-
-const API="https://script.google.com/macros/s/AKfycbwPmohhkVnKHnQya2n-x0A2b1KqNybhYgxKiFp9Q_esXuLRoID-kT2_c07AN5NjDQDt/exec";
-
-let username=localStorage.getItem("name");
-
-if(!username){
-username=prompt("Tên của bạn:");
-localStorage.setItem("name",username);
-}
-
-let lastData="";
-
-// escape
-function escapeHtml(text){
-return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-
-// link
-function makeLink(text){
-let safe=escapeHtml(text);
-return safe.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
-let href=url.startsWith("http")?url:"https://"+url;
-return '<a href="'+href+'" target="_blank">'+url+'</a>';
-});
-}
-
-// time
-function formatTime(t){
-if(!t) return "--:--";
-if(typeof t==="string" && t.length>=5) return t.substring(0,5);
-return "--:--";
-}
-
-// scroll check
-function isAtBottom(el){
-return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
-}
-
-// load
-async function load(){
-
-let top=document.getElementById("top");
-let stayBottom=isAtBottom(top);
-
-let res=await fetch(API+"?t="+Date.now());
-let data=await res.json();
-
-let json=JSON.stringify(data);
-if(json===lastData) return;
-lastData=json;
-
-top.innerHTML="";
-
-data.forEach(row=>{
-
-let msg=row.message||"";
-
-let name="";
-let text=msg;
-
-let i=msg.indexOf(":");
-
-if(i!=-1){
-name=msg.substring(0,i);
-text=msg.substring(i+1);
-}
-
-let me=name==username;
-
-let div=document.createElement("div");
-div.className="msg "+(me?"right":"left");
-
-let content="";
-
-if(text.startsWith("data:image")){
-content='<img src="'+text+'">';
-}else{
-content=makeLink(text);
-}
-
-div.innerHTML=
-(me?"":"<b>"+escapeHtml(name)+"</b><br>")
-+content+
-'<div class="time">'+formatTime(row.time)+'</div>';
-
-top.appendChild(div);
-
-});
-
-if(stayBottom){
-top.scrollTop=top.scrollHeight;
-}
-
-}
-
-// send
-async function send(){
-let input=document.getElementById("text");
-let text=input.value.trim();
-if(!text) return;
-
-await fetch(API,{
-method:"POST",
-body:new URLSearchParams({
-message:username+":"+text
-})
-});
-
-input.value="";
-load();
-}
-
-// send image
-document.getElementById("file").addEventListener("change",function(){
-
-let file=this.files[0];
-if(!file) return;
-
-let reader=new FileReader();
-
-reader.onload=async function(){
-await fetch(API,{
-method:"POST",
-body:new URLSearchParams({
-message:username+":"+reader.result
-})
-});
-load();
-};
-
-reader.readAsDataURL(file);
-
-});
-
-// enter
-document.getElementById("text").addEventListener("keypress",function(e){
-if(e.key==="Enter"){
-send();
-}
 });
 
 setInterval(load,1000);

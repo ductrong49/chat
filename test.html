@@ -73,6 +73,7 @@ border:none;
 background:#0084ff;
 color:white;
 border-radius:25px;
+cursor:pointer;
 }
 #file,#file2{display:none;}
 a{color:#0b93f6;word-break:break-all;}
@@ -98,7 +99,7 @@ a{color:#0b93f6;word-break:break-all;}
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbz1SZ01ZyXM9Tt0N_83AslxKlupIpuADTM19nkSUS2Umn7ysAbvYwGOUp9I1K582l0o/exec";
+const API="https://script.google.com/macros/s/AKfycbw3uALZbnsRX8T8bGh3fQdU7GFZh_2mDM-1PGkvDh3l1EU0aBnt23hniFGwewo6UypT/exec";
 
 let username=localStorage.getItem("name");
 if(!username){
@@ -108,10 +109,12 @@ localStorage.setItem("name",username);
 
 let lastData="";
 
+// escape HTML
 function escapeHtml(t){
 return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
+// link
 function makeLink(t){
 let s=escapeHtml(t);
 return s.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
@@ -120,19 +123,30 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
+// nhận diện ảnh
 function isImage(url){
 return url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
 }
 
+// LOAD DATA
 async function load(){
-let top=document.getElementById("top");
-
+try{
 let res=await fetch(API+"?t="+Date.now());
 let data=await res.json();
+
+console.log("DATA:",data);
+
+// 🔥 fix nếu server trả object
+if(!Array.isArray(data)){
+data=Object.values(data);
+}
 
 let json=JSON.stringify(data);
 if(json===lastData) return;
 lastData=json;
+
+let top=document.getElementById("top");
+let stayBottom = top.scrollHeight - top.scrollTop - top.clientHeight < 50;
 
 top.innerHTML="";
 
@@ -172,7 +186,6 @@ content=`
 </div>`;
 }
 
-// TEXT
 }else{
 content=makeLink(text);
 }
@@ -186,12 +199,19 @@ top.appendChild(div);
 
 });
 
+if(stayBottom){
 top.scrollTop=top.scrollHeight;
+}
+
+}catch(err){
+console.error("LOAD ERROR:",err);
+}
 }
 
 // ===== GỬI TEXT =====
 async function send(){
-let text=document.getElementById("text").value.trim();
+let input=document.getElementById("text");
+let text=input.value.trim();
 if(!text) return;
 
 await fetch(API,{
@@ -201,7 +221,7 @@ message:username+":"+text
 })
 });
 
-document.getElementById("text").value="";
+input.value="";
 load();
 }
 
@@ -215,7 +235,7 @@ reader.onerror=error=>reject(error);
 });
 }
 
-// ===== UPLOAD =====
+// ===== UPLOAD FILE =====
 async function upload(file){
 
 if(file.size > 15 * 1024 * 1024){
@@ -252,6 +272,7 @@ text.addEventListener("keypress",function(e){
 if(e.key==="Enter") send();
 });
 
+// auto load
 setInterval(load,1500);
 load();
 

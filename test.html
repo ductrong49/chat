@@ -65,6 +65,15 @@ border-radius:10px;
 margin-top:6px;
 }
 
+/* 🔥 PREVIEW 50% */
+.preview{
+max-width:50%;
+margin-top:6px;
+border-radius:10px;
+border:1px dashed #999;
+}
+
+/* FILE BOX */
 .fileBox{
 margin-top:6px;
 padding:8px;
@@ -84,6 +93,7 @@ background:rgba(255,255,255,0.2);
 
 #bottom{
 display:flex;
+flex-wrap:wrap;
 padding:10px;
 background:rgba(255,255,255,0.9);
 border-top:1px solid #ddd;
@@ -104,7 +114,6 @@ border:none;
 background:#0084ff;
 color:white;
 border-radius:25px;
-cursor:pointer;
 }
 
 #file,#file2{display:none;}
@@ -118,39 +127,6 @@ word-break:break-all;
 color:#fff;
 text-decoration:underline;
 }
-
-/* 🔥 POPUP PREVIEW */
-#previewBox{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.6);
-display:none;
-align-items:center;
-justify-content:center;
-z-index:999;
-}
-
-#previewContent{
-background:white;
-padding:15px;
-border-radius:12px;
-max-width:90%;
-text-align:center;
-}
-
-#previewContent img{
-max-width:100%;
-border-radius:10px;
-}
-
-#previewContent .fileName{
-margin:10px 0;
-font-weight:bold;
-}
-
 </style>
 </head>
 
@@ -168,15 +144,10 @@ font-weight:bold;
 <button onclick="document.getElementById('file2').click()">📎</button>
 
 <button onclick="send()">Gửi</button>
-</div>
 
-<!-- 🔥 PREVIEW -->
-<div id="previewBox">
-  <div id="previewContent">
-    <div id="previewArea"></div>
-    <button onclick="confirmSend()">Gửi</button>
-    <button onclick="cancelSend()">Huỷ</button>
-  </div>
+<!-- preview -->
+<div id="previewArea"></div>
+
 </div>
 
 <script>
@@ -190,12 +161,14 @@ localStorage.setItem("name",username);
 }
 
 let lastData="";
-let pendingData=null; // 🔥 lưu dữ liệu chờ gửi
+let pendingData=""; // 🔥 dữ liệu chờ gửi
 
+// escape
 function escapeHtml(t){
 return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
+// link
 function makeLink(t){
 let s=escapeHtml(t);
 return s.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
@@ -204,10 +177,12 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
+// TIME
 function formatTime(t){
 return t || "--:--";
 }
 
+// scroll
 function isAtBottom(el){
 return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
 }
@@ -247,9 +222,11 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
+// ảnh
 if(text.startsWith("data:image")){
 content='<img src="'+text+'">';
 
+// file
 }else if(text.startsWith("FILE|")){
 let parts=text.split("|");
 let filename=parts[1];
@@ -281,8 +258,24 @@ top.scrollTop=top.scrollHeight;
 
 }
 
-// gửi text
+// gửi
 async function send(){
+
+// nếu có file/ảnh đang chờ → gửi cái đó
+if(pendingData){
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message:username+":"+pendingData
+})
+});
+pendingData="";
+document.getElementById("previewArea").innerHTML="";
+load();
+return;
+}
+
+// gửi text
 let input=document.getElementById("text");
 let text=input.value.trim();
 if(!text) return;
@@ -298,7 +291,7 @@ input.value="";
 load();
 }
 
-// 📷 chọn ảnh → preview
+// chọn ảnh
 document.getElementById("file").addEventListener("change",function(){
 
 let file=this.files[0];
@@ -307,83 +300,51 @@ if(!file) return;
 let reader=new FileReader();
 
 reader.onload=function(){
-pendingData={
-type:"image",
-data:reader.result
-};
 
+pendingData = reader.result;
+
+// preview 50%
 document.getElementById("previewArea").innerHTML=
-'<img src="'+reader.result+'">';
-document.getElementById("previewBox").style.display="flex";
+'<img class="preview" src="'+reader.result+'">';
+
 };
 
 reader.readAsDataURL(file);
 
 });
 
-// 📎 chọn file → preview
+// chọn file
 document.getElementById("file2").addEventListener("change",function(){
 
 let file=this.files[0];
 if(!file) return;
 
+// ⚠️ giới hạn file (tránh lỗi GAS)
+if(file.size > 2*1024*1024){
+alert("File quá lớn (>2MB)");
+return;
+}
+
 let reader=new FileReader();
 
 reader.onload=function(){
 
-pendingData={
-type:"file",
-name:file.name,
-data:reader.result
-};
+pendingData = "FILE|"+file.name+"|"+reader.result;
 
 document.getElementById("previewArea").innerHTML=
-'<div class="fileName">📎 '+escapeHtml(file.name)+'</div>';
+'<div class="fileBox">📎 '+escapeHtml(file.name)+' (nhấn Gửi để xác nhận)</div>';
 
-document.getElementById("previewBox").style.display="flex";
 };
 
 reader.readAsDataURL(file);
 
 });
 
-// ✅ xác nhận gửi
-async function confirmSend(){
-
-if(!pendingData) return;
-
-if(pendingData.type==="image"){
-await fetch(API,{
-method:"POST",
-body:new URLSearchParams({
-message:username+":"+pendingData.data
-})
-});
-}
-
-if(pendingData.type==="file"){
-await fetch(API,{
-method:"POST",
-body:new URLSearchParams({
-message:username+":FILE|"+pendingData.name+"|"+pendingData.data
-})
-});
-}
-
-pendingData=null;
-document.getElementById("previewBox").style.display="none";
-load();
-}
-
-// ❌ huỷ
-function cancelSend(){
-pendingData=null;
-document.getElementById("previewBox").style.display="none";
-}
-
 // enter
 document.getElementById("text").addEventListener("keypress",function(e){
-if(e.key==="Enter") send();
+if(e.key==="Enter"){
+send();
+}
 });
 
 setInterval(load,1000);

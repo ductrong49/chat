@@ -104,6 +104,400 @@ border:none;
 background:#0084ff;
 color:white;
 border-radius:25px;
+cursor:pointer;
+}
+
+#file,#file2{display:none;}
+
+a{
+color:#0b93f6;
+word-break:break-all;
+}
+
+.right a{
+color:#fff;
+text-decoration:underline;
+}
+
+/* 🔥 POPUP PREVIEW */
+#previewBox{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:999;
+}
+
+#previewContent{
+background:white;
+padding:15px;
+border-radius:12px;
+max-width:90%;
+text-align:center;
+}
+
+#previewContent img{
+max-width:100%;
+border-radius:10px;
+}
+
+#previewContent .fileName{
+margin:10px 0;
+font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="top"></div>
+
+<div id="bottom">
+<input id="text" placeholder="Nhập tin...">
+
+<input type="file" id="file" accept="image/*">
+<button onclick="document.getElementById('file').click()">📷</button>
+
+<input type="file" id="file2">
+<button onclick="document.getElementById('file2').click()">📎</button>
+
+<button onclick="send()">Gửi</button>
+</div>
+
+<!-- 🔥 PREVIEW -->
+<div id="previewBox">
+  <div id="previewContent">
+    <div id="previewArea"></div>
+    <button onclick="confirmSend()">Gửi</button>
+    <button onclick="cancelSend()">Huỷ</button>
+  </div>
+</div>
+
+<script>
+
+const API="https://script.google.com/macros/s/AKfycbzmwakH4J7HvpLtMBq2flXWVckIG87nf5im3kf51bZffX2tyz7l9ykW5cVax7amAArl/exec";
+
+let username=localStorage.getItem("name");
+if(!username){
+username=prompt("Tên của bạn:");
+localStorage.setItem("name",username);
+}
+
+let lastData="";
+let pendingData=null; // 🔥 lưu dữ liệu chờ gửi
+
+function escapeHtml(t){
+return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function makeLink(t){
+let s=escapeHtml(t);
+return s.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
+let href=url.startsWith("http")?url:"https://"+url;
+return '<a href="'+href+'" target="_blank">'+url+'</a>';
+});
+}
+
+function formatTime(t){
+return t || "--:--";
+}
+
+function isAtBottom(el){
+return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+}
+
+// LOAD
+async function load(){
+
+let top=document.getElementById("top");
+let stayBottom=isAtBottom(top);
+
+let res=await fetch(API+"?t="+Date.now());
+let data=await res.json();
+
+let json=JSON.stringify(data);
+if(json===lastData) return;
+lastData=json;
+
+top.innerHTML="";
+
+data.forEach(row=>{
+
+let msg=row.message||"";
+
+let name="";
+let text=msg;
+
+let i=msg.indexOf(":");
+if(i!=-1){
+name=msg.substring(0,i);
+text=msg.substring(i+1);
+}
+
+let me=name==username;
+
+let div=document.createElement("div");
+div.className="msg "+(me?"right":"left");
+
+let content="";
+
+if(text.startsWith("data:image")){
+content='<img src="'+text+'">';
+
+}else if(text.startsWith("FILE|")){
+let parts=text.split("|");
+let filename=parts[1];
+let filedata=parts[2];
+
+content=`
+<div class="fileBox">
+📎 ${escapeHtml(filename)}<br>
+<a href="${filedata}" download="${filename}">Tải xuống</a>
+</div>
+`;
+
+}else{
+content=makeLink(text);
+}
+
+div.innerHTML=
+(me?"":"<b>"+escapeHtml(name)+"</b><br>")
++content+
+'<div class="time">'+formatTime(row.time)+'</div>';
+
+top.appendChild(div);
+
+});
+
+if(stayBottom){
+top.scrollTop=top.scrollHeight;
+}
+
+}
+
+// gửi text
+async function send(){
+let input=document.getElementById("text");
+let text=input.value.trim();
+if(!text) return;
+
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message:username+":"+text
+})
+});
+
+input.value="";
+load();
+}
+
+// 📷 chọn ảnh → preview
+document.getElementById("file").addEventListener("change",function(){
+
+let file=this.files[0];
+if(!file) return;
+
+let reader=new FileReader();
+
+reader.onload=function(){
+pendingData={
+type:"image",
+data:reader.result
+};
+
+document.getElementById("previewArea").innerHTML=
+'<img src="'+reader.result+'">';
+document.getElementById("previewBox").style.display="flex";
+};
+
+reader.readAsDataURL(file);
+
+});
+
+// 📎 chọn file → preview
+document.getElementById("file2").addEventListener("change",function(){
+
+let file=this.files[0];
+if(!file) return;
+
+let reader=new FileReader();
+
+reader.onload=function(){
+
+pendingData={
+type:"file",
+name:file.name,
+data:reader.result
+};
+
+document.getElementById("previewArea").innerHTML=
+'<div class="fileName">📎 '+escapeHtml(file.name)+'</div>';
+
+document.getElementById("previewBox").style.display="flex";
+};
+
+reader.readAsDataURL(file);
+
+});
+
+// ✅ xác nhận gửi
+async function confirmSend(){
+
+if(!pendingData) return;
+
+if(pendingData.type==="image"){
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message:username+":"+pendingData.data
+})
+});
+}
+
+if(pendingData.type==="file"){
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message:username+":FILE|"+pendingData.name+"|"+pendingData.data
+})
+});
+}
+
+pendingData=null;
+document.getElementById("previewBox").style.display="none";
+load();
+}
+
+// ❌ huỷ
+function cancelSend(){
+pendingData=null;
+document.getElementById("previewBox").style.display="none";
+}
+
+// enter
+document.getElementById("text").addEventListener("keypress",function(e){
+if(e.key==="Enter") send();
+});
+
+setInterval(load,1000);
+load();
+
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Mini</title>
+
+<style>
+*{box-sizing:border-box;}
+
+body{
+margin:0;
+font-family:-apple-system,BlinkMacSystemFont,Arial;
+background:linear-gradient(to bottom,#e5ddd5,#d9e6f2);
+display:flex;
+flex-direction:column;
+height:100vh;
+}
+
+#top{
+flex:1;
+overflow:auto;
+padding:12px;
+display:flex;
+flex-direction:column;
+}
+
+.msg{
+max-width:75%;
+padding:10px 14px;
+margin:6px 0;
+border-radius:18px;
+word-wrap:break-word;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+.left{
+background:white;
+align-self:flex-start;
+border-bottom-left-radius:5px;
+}
+
+.right{
+background:linear-gradient(135deg,#0084ff,#00c6ff);
+color:white;
+align-self:flex-end;
+border-bottom-right-radius:5px;
+}
+
+.msg b{
+font-size:12px;
+opacity:0.7;
+}
+
+.time{
+font-size:10px;
+opacity:0.6;
+text-align:right;
+margin-top:4px;
+}
+
+img{
+max-width:100%;
+border-radius:10px;
+margin-top:6px;
+}
+
+.fileBox{
+margin-top:6px;
+padding:8px;
+background:#f1f1f1;
+border-radius:8px;
+font-size:14px;
+}
+
+.fileBox a{
+color:#007bff;
+text-decoration:none;
+}
+
+.right .fileBox{
+background:rgba(255,255,255,0.2);
+}
+
+#bottom{
+display:flex;
+padding:10px;
+background:rgba(255,255,255,0.9);
+border-top:1px solid #ddd;
+}
+
+#text{
+flex:1;
+padding:12px;
+border-radius:25px;
+border:1px solid #ccc;
+font-size:16px;
+}
+
+button{
+margin-left:6px;
+padding:0 14px;
+border:none;
+background:#0084ff;
+color:white;
+border-radius:25px;
 }
 
 #file,#file2{display:none;}

@@ -7,7 +7,6 @@
 
 <style>
 *{box-sizing:border-box;}
-
 body{
 margin:0;
 font-family:-apple-system,BlinkMacSystemFont,Arial;
@@ -16,7 +15,6 @@ display:flex;
 flex-direction:column;
 height:100vh;
 }
-
 #top{
 flex:1;
 overflow:auto;
@@ -24,7 +22,6 @@ padding:12px;
 display:flex;
 flex-direction:column;
 }
-
 .msg{
 max-width:75%;
 padding:10px 14px;
@@ -33,38 +30,20 @@ border-radius:18px;
 word-wrap:break-word;
 box-shadow:0 2px 6px rgba(0,0,0,0.08);
 }
-
 .left{
 background:white;
 align-self:flex-start;
 border-bottom-left-radius:5px;
 }
-
 .right{
 background:linear-gradient(135deg,#0084ff,#00c6ff);
 color:white;
 align-self:flex-end;
 border-bottom-right-radius:5px;
 }
-
-.msg b{
-font-size:12px;
-opacity:0.7;
-}
-
-.time{
-font-size:10px;
-opacity:0.6;
-text-align:right;
-margin-top:4px;
-}
-
-img{
-max-width:100%;
-border-radius:10px;
-margin-top:6px;
-}
-
+.msg b{font-size:12px;opacity:0.7;}
+.time{font-size:10px;opacity:0.6;text-align:right;margin-top:4px;}
+img{max-width:100%;border-radius:10px;margin-top:6px;}
 .fileBox{
 margin-top:6px;
 padding:8px;
@@ -72,23 +51,14 @@ background:#f1f1f1;
 border-radius:8px;
 font-size:14px;
 }
-
-.fileBox a{
-color:#007bff;
-text-decoration:none;
-}
-
-.right .fileBox{
-background:rgba(255,255,255,0.2);
-}
-
+.fileBox a{color:#007bff;text-decoration:none;}
+.right .fileBox{background:rgba(255,255,255,0.2);}
 #bottom{
 display:flex;
 padding:10px;
 background:rgba(255,255,255,0.9);
 border-top:1px solid #ddd;
 }
-
 #text{
 flex:1;
 padding:12px;
@@ -96,7 +66,6 @@ border-radius:25px;
 border:1px solid #ccc;
 font-size:16px;
 }
-
 button{
 margin-left:6px;
 padding:0 14px;
@@ -105,18 +74,7 @@ background:#0084ff;
 color:white;
 border-radius:25px;
 }
-
 #file,#file2{display:none;}
-
-a{
-color:#0b93f6;
-word-break:break-all;
-}
-
-.right a{
-color:#fff;
-text-decoration:underline;
-}
 </style>
 </head>
 
@@ -126,19 +84,16 @@ text-decoration:underline;
 
 <div id="bottom">
 <input id="text" placeholder="Nhập tin...">
-
 <input type="file" id="file" accept="image/*">
-<button onclick="document.getElementById('file').click()">📷</button>
-
+<button onclick="file.click()">📷</button>
 <input type="file" id="file2">
-<button onclick="document.getElementById('file2').click()">📎</button>
-
+<button onclick="file2.click()">📎</button>
 <button onclick="send()">Gửi</button>
 </div>
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbyGlxayv9g8iOjU1JkFERbXjrCB_ECOxbjD5dMGjAnIwupheb5v_QdDLFYEPJteivjZ/exec";
+const API="https://script.google.com/macros/s/AKfycby8WOgq4UURTdZroiXvfjBvS-SIlyxLTzWxeV4LBZjgtcSqZqVdtVKvWzymaCBLCmFg/exec";
 
 let username=localStorage.getItem("name");
 if(!username){
@@ -146,51 +101,14 @@ username=prompt("Tên của bạn:");
 localStorage.setItem("name",username);
 }
 
-let lastData="";
-
-function escapeHtml(t){
-return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-
-function makeLink(t){
-let s=escapeHtml(t);
-return s.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
-let href=url.startsWith("http")?url:"https://"+url;
-return '<a href="'+href+'" target="_blank">'+url+'</a>';
-});
-}
-
-// 🔥 LẤY NGUYÊN CỘT D
-function formatTime(t){
-return t ? t : "--:--";
-}
-
-function isAtBottom(el){
-return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
-}
-
-function isImage(url){
-return url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-}
-
 // LOAD
 async function load(){
-
-let top=document.getElementById("top");
-let stayBottom=isAtBottom(top);
-
 let res=await fetch(API+"?t="+Date.now());
 let data=await res.json();
 
-// fix nếu bị object
-if(!Array.isArray(data)){
-data=Object.values(data);
-}
+if(!Array.isArray(data)) data=Object.values(data);
 
-let json=JSON.stringify(data);
-if(json===lastData) return;
-lastData=json;
-
+let top=document.getElementById("top");
 top.innerHTML="";
 
 data.forEach(row=>{
@@ -213,105 +131,77 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
-// FILE
 if(text.startsWith("FILE|")){
 let parts=text.split("|");
 let filename=parts[1];
 let url=parts[2];
 
-if(isImage(url)){
+if(url.match(/\.(jpg|jpeg|png|gif|webp)$/i)){
 content='<img src="'+url+'">';
 }else{
-content=`
-<div class="fileBox">
-📎 ${escapeHtml(filename)}<br>
-<a href="${url}" target="_blank">Tải xuống</a>
-</div>`;
+content=`📎 ${filename}<br><a href="${url}" target="_blank">Tải xuống</a>`;
 }
 
-// TEXT
 }else{
-content=makeLink(text);
+content=text;
 }
 
 div.innerHTML=
-(me?"":"<b>"+escapeHtml(name)+"</b><br>")
+(me?"":"<b>"+name+"</b><br>")
 +content+
-'<div class="time">'+formatTime(row.time)+'</div>';
+'<div class="time">'+row.time+'</div>';
 
 top.appendChild(div);
 
 });
 
-if(stayBottom){
 top.scrollTop=top.scrollHeight;
 }
 
-}
-
-// ===== GỬI TEXT =====
+// SEND TEXT
 async function send(){
-let input=document.getElementById("text");
-let text=input.value.trim();
-if(!text) return;
+let t=text.value.trim();
+if(!t) return;
 
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-message:username+":"+text
+message:username+":"+t
 })
 });
 
-input.value="";
+text.value="";
 load();
 }
 
-// ===== BASE64 =====
+// FILE → BASE64
 function toBase64(file){
-return new Promise((resolve,reject)=>{
-let reader=new FileReader();
-reader.readAsDataURL(file);
-reader.onload=()=>resolve(reader.result);
-reader.onerror=error=>reject(error);
+return new Promise((res,rej)=>{
+let r=new FileReader();
+r.onload=()=>res(r.result);
+r.onerror=rej;
+r.readAsDataURL(file);
 });
 }
 
-// ===== UPLOAD =====
-async function upload(file){
-
-if(file.size > 15 * 1024 * 1024){
-alert("File quá lớn (>15MB)");
-return;
-}
-
-let base64 = await toBase64(file);
+// UPLOAD
+async function upload(f){
+let base64=await toBase64(f);
 
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-message: username + ":BASE64|" + file.name + "|" + file.type + "|" + base64.split(",")[1]
+message:username+":BASE64|"+f.name+"|"+f.type+"|"+base64.split(",")[1]
 })
 });
 
 load();
 }
 
-// ảnh
-document.getElementById("file").addEventListener("change",function(){
-let f=this.files[0];
-if(f) upload(f);
-});
+file.onchange=()=>file.files[0]&&upload(file.files[0]);
+file2.onchange=()=>file2.files[0]&&upload(file2.files[0]);
 
-// file
-document.getElementById("file2").addEventListener("change",function(){
-let f=this.files[0];
-if(f) upload(f);
-});
-
-// enter
-document.getElementById("text").addEventListener("keypress",function(e){
-if(e.key==="Enter") send();
-});
+text.onkeypress=e=>{if(e.key==="Enter")send();};
 
 setInterval(load,1500);
 load();

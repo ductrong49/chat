@@ -103,16 +103,6 @@ cursor:pointer;
 }
 
 #file,#file2{display:none;}
-
-a{
-color:#0b93f6;
-word-break:break-all;
-}
-
-.right a{
-color:#fff;
-text-decoration:underline;
-}
 </style>
 </head>
 
@@ -124,17 +114,17 @@ text-decoration:underline;
 <input id="text" placeholder="Nhập tin...">
 
 <input type="file" id="file" accept="image/*">
-<button onclick="document.getElementById('file').click()">📷</button>
+<button onclick="file.click()">📷</button>
 
 <input type="file" id="file2">
-<button onclick="document.getElementById('file2').click()">📎</button>
+<button onclick="file2.click()">📎</button>
 
 <button onclick="send()">Gửi</button>
 </div>
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycby2Vb8lPt6BobDzEiniIA2Pjbgl70hWckQzMZyvze_vAPR6bZCemn-2AspAK6xTJj8/exec";
+const API="https://script.google.com/macros/s/AKfycbzEhWT32f0PIMjyxkF_T94edFhrlxw0DwpMcCMiPiwrLY-Z1C4HST6c-cBF1cZVFpY/exec";
 
 let username=localStorage.getItem("name");
 if(!username){
@@ -144,10 +134,12 @@ localStorage.setItem("name",username);
 
 let lastData="";
 
+// escape
 function escapeHtml(t){
 return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
+// link
 function makeLink(t){
 let s=escapeHtml(t);
 return s.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
@@ -156,11 +148,12 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
-// giữ nguyên giá trị cột D
+// time
 function formatTime(t){
 return t || "--:--";
 }
 
+// scroll
 function isAtBottom(el){
 return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
 }
@@ -183,7 +176,6 @@ top.innerHTML="";
 data.forEach(row=>{
 
 let msg=row.message||"";
-
 let name="";
 let text=msg;
 
@@ -200,14 +192,12 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
-// ✅ HIỂN THỊ FILE TỪ DRIVE
+// FILE từ Drive
 if(text.startsWith("FILE|")){
-
 let parts=text.split("|");
 let filename=parts[1];
 let url=parts[2];
 
-// nếu là ảnh
 if(filename.match(/\.(jpg|jpeg|png|gif|webp)$/i)){
 content='<img src="'+url+'">';
 }else{
@@ -215,8 +205,7 @@ content=`
 <div class="fileBox">
 📎 ${escapeHtml(filename)}<br>
 <a href="${url}" target="_blank">Mở file</a>
-</div>
-`;
+</div>`;
 }
 
 }else{
@@ -240,58 +229,69 @@ top.scrollTop=top.scrollHeight;
 
 // gửi text
 async function send(){
+
 let input=document.getElementById("text");
 let text=input.value.trim();
 if(!text) return;
 
 await fetch(API,{
 method:"POST",
-body:new URLSearchParams({
-message:username+":"+text
-})
+headers:{
+"Content-Type":"application/x-www-form-urlencoded"
+},
+body:"message="+encodeURIComponent(username+":"+text)
 });
 
 input.value="";
 load();
 }
 
-// 🚀 gửi file lên server
+// 🚀 gửi file chuẩn FIX
 async function sendFile(file){
+
+return new Promise((resolve)=>{
 
 let reader=new FileReader();
 
-reader.onload=function(){
+reader.onload=async function(){
 
 let base64 = reader.result.split(",")[1];
 
-fetch(API,{
+await fetch(API,{
 method:"POST",
-body:new URLSearchParams({
-message:username+":BASE64|"+file.name+"|"+file.type+"|"+base64
-})
-}).then(()=>load());
+headers:{
+"Content-Type":"application/x-www-form-urlencoded"
+},
+body:"message="+encodeURIComponent(
+username+":BASE64|"+file.name+"|"+file.type+"|"+base64
+)
+});
 
+resolve();
+load();
 };
 
 reader.readAsDataURL(file);
+
+});
 }
 
-// 📷 ảnh
-document.getElementById("file").addEventListener("change",function(){
-let file=this.files[0];
-if(file) sendFile(file);
+// ảnh
+file.onchange=function(){
+let f=this.files[0];
+if(f) sendFile(f);
 this.value="";
-});
+}
 
-// 📎 file
-document.getElementById("file2").addEventListener("change",function(){
-let file=this.files[0];
-if(file) sendFile(file);
+// file
+file2.onchange=function(){
+let f=this.files[0];
+if(f) sendFile(f);
 this.value="";
-});
+}
 
 // enter
-document.getElementById("text").addEventListener("keypress",function(e){
+text.addEventListener("keypress",function(e){
 if(e.key==="Enter") send();
 });
 

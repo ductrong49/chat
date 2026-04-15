@@ -40,9 +40,9 @@ button{margin-left:6px;padding:0 14px;border:none;background:#0084ff;color:white
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbxlSuV1kSbLTESDKP-63z4HZRpYaXCHGTDGq03HUYeHTnaDzu-C8QB-xl2PrlA-K2UD/exec";
+const API="https://script.google.com/macros/s/AKfycbwQQALf5cA59SJDT9h3dw-jE_jQtot0uJ5z-cEqw2ehrrLOi-krNYvOGzPHdsYHn5Jf/exec";
 
-let username=localStorage.getItem("name") || prompt("Tên bạn:");
+let username=localStorage.getItem("name")||prompt("Tên:");
 localStorage.setItem("name",username);
 
 // LOAD
@@ -61,9 +61,13 @@ let msg=row.message||"";
 let name="", text=msg;
 
 let i=msg.indexOf(":");
-if(i!=-1){ name=msg.substring(0,i); text=msg.substring(i+1); }
+if(i!=-1){
+name=msg.substring(0,i);
+text=msg.substring(i+1);
+}
 
 let me=name==username;
+
 let div=document.createElement("div");
 div.className="msg "+(me?"right":"left");
 
@@ -74,7 +78,8 @@ let p=text.split("|");
 let filename=p[1];
 let url=p[2];
 
-if(url.includes("googleusercontent")){
+// ảnh
+if(url.match(/\.(jpg|jpeg|png|gif|webp)/i) || url.includes("drive")){
 content='<img src="'+url+'">';
 }else{
 content=`📎 ${filename}<br><a href="${url}" target="_blank">Tải xuống</a>`;
@@ -84,10 +89,13 @@ content=`📎 ${filename}<br><a href="${url}" target="_blank">Tải xuống</a>`
 content=text;
 }
 
-div.innerHTML=(me?"":"<b>"+name+"</b><br>")+content+
+div.innerHTML=
+(me?"":"<b>"+name+"</b><br>")
++content+
 '<div class="time">'+row.time+'</div>';
 
 top.appendChild(div);
+
 });
 
 top.scrollTop=top.scrollHeight;
@@ -100,8 +108,7 @@ if(!text.value.trim()) return;
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-name:username,
-text:text.value
+message:username+":"+text.value
 })
 });
 
@@ -109,28 +116,29 @@ text.value="";
 load();
 }
 
-// UPLOAD FILE (KHÔNG BASE64)
+// FILE → BASE64
+function toBase64(file){
+return new Promise((res,rej)=>{
+let r=new FileReader();
+r.onload=()=>res(r.result);
+r.onerror=rej;
+r.readAsDataURL(file);
+});
+}
+
+// UPLOAD
 async function upload(file){
 
-let reader=new FileReader();
-
-reader.onload=async function(){
-let base64=reader.result.split(",")[1];
+let base64=await toBase64(file);
 
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-name:username,
-filename:file.name,
-type:file.type,
-file:base64
+message:username+":BASE64|"+file.name+"|"+file.type+"|"+base64.split(",")[1]
 })
 });
 
 load();
-};
-
-reader.readAsDataURL(file);
 }
 
 file.onchange=()=>file.files[0]&&upload(file.files[0]);

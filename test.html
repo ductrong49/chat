@@ -40,7 +40,7 @@ button{margin-left:6px;padding:0 14px;border:none;background:#0084ff;color:white
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbwQQALf5cA59SJDT9h3dw-jE_jQtot0uJ5z-cEqw2ehrrLOi-krNYvOGzPHdsYHn5Jf/exec";
+const API="https://script.google.com/macros/s/AKfycbwnOJBpYByJEn9ivNJBQ7t-oVeYtY6pfsLe_30P_d7Pn_1YC4GF5X-oFzN9rS__CR5l/exec";
 
 let username=localStorage.getItem("name")||prompt("Tên:");
 localStorage.setItem("name",username);
@@ -78,11 +78,10 @@ let p=text.split("|");
 let filename=p[1];
 let url=p[2];
 
-// ảnh
 if(url.match(/\.(jpg|jpeg|png|gif|webp)/i) || url.includes("drive")){
 content='<img src="'+url+'">';
 }else{
-content=`📎 ${filename}<br><a href="${url}" target="_blank">Tải xuống</a>`;
+content=`<div class="fileBox">📎 ${filename}<br><a href="${url}" target="_blank">Tải xuống</a></div>`;
 }
 
 }else{
@@ -128,7 +127,6 @@ r.readAsDataURL(file);
 
 // UPLOAD
 async function upload(file){
-
 let base64=await toBase64(file);
 
 await fetch(API,{

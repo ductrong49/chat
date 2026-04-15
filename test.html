@@ -65,14 +65,6 @@ border-radius:10px;
 margin-top:6px;
 }
 
-/* 🔥 PREVIEW 50% */
-.preview{
-max-width:50%;
-margin-top:6px;
-border-radius:10px;
-border:1px dashed #999;
-}
-
 /* FILE BOX */
 .fileBox{
 margin-top:6px;
@@ -93,7 +85,6 @@ background:rgba(255,255,255,0.2);
 
 #bottom{
 display:flex;
-flex-wrap:wrap;
 padding:10px;
 background:rgba(255,255,255,0.9);
 border-top:1px solid #ddd;
@@ -114,6 +105,7 @@ border:none;
 background:#0084ff;
 color:white;
 border-radius:25px;
+cursor:pointer;
 }
 
 #file,#file2{display:none;}
@@ -144,15 +136,11 @@ text-decoration:underline;
 <button onclick="document.getElementById('file2').click()">📎</button>
 
 <button onclick="send()">Gửi</button>
-
-<!-- preview -->
-<div id="previewArea"></div>
-
 </div>
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbzmwakH4J7HvpLtMBq2flXWVckIG87nf5im3kf51bZffX2tyz7l9ykW5cVax7amAArl/exec";
+const API="https://script.google.com/macros/s/AKfycbz3h7QPjtkG6gD7nVnoqJmqD_7shOQZRkkjY9Jy-tBw-mzcISojLfSldeUZ3h14h8jX/exec";
 
 let username=localStorage.getItem("name");
 if(!username){
@@ -161,7 +149,6 @@ localStorage.setItem("name",username);
 }
 
 let lastData="";
-let pendingData=""; // 🔥 dữ liệu chờ gửi
 
 // escape
 function escapeHtml(t){
@@ -177,7 +164,7 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
-// TIME
+// TIME (lấy nguyên từ cột D)
 function formatTime(t){
 return t || "--:--";
 }
@@ -222,20 +209,22 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
-// ảnh
-if(text.startsWith("data:image")){
-content='<img src="'+text+'">';
+// 📷 ảnh (Drive link)
+if(text.startsWith("FILE|") && text.match(/\.(jpg|jpeg|png|gif)/i)){
+let parts=text.split("|");
+let url=parts[2];
+content='<img src="'+url+'">';
 
-// file
+// 📎 file
 }else if(text.startsWith("FILE|")){
 let parts=text.split("|");
 let filename=parts[1];
-let filedata=parts[2];
+let url=parts[2];
 
 content=`
 <div class="fileBox">
 📎 ${escapeHtml(filename)}<br>
-<a href="${filedata}" download="${filename}">Tải xuống</a>
+<a href="${url}" target="_blank">Mở file</a>
 </div>
 `;
 
@@ -258,24 +247,8 @@ top.scrollTop=top.scrollHeight;
 
 }
 
-// gửi
-async function send(){
-
-// nếu có file/ảnh đang chờ → gửi cái đó
-if(pendingData){
-await fetch(API,{
-method:"POST",
-body:new URLSearchParams({
-message:username+":"+pendingData
-})
-});
-pendingData="";
-document.getElementById("previewArea").innerHTML="";
-load();
-return;
-}
-
 // gửi text
+async function send(){
 let input=document.getElementById("text");
 let text=input.value.trim();
 if(!text) return;
@@ -291,7 +264,20 @@ input.value="";
 load();
 }
 
-// chọn ảnh
+// 🚀 GỬI FILE LÊN DRIVE
+async function sendFile(name,type,base64){
+
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message:username+":BASE64|"+name+"|"+type+"|"+base64
+})
+});
+
+load();
+}
+
+// 📷 gửi ảnh
 document.getElementById("file").addEventListener("change",function(){
 
 let file=this.files[0];
@@ -300,40 +286,25 @@ if(!file) return;
 let reader=new FileReader();
 
 reader.onload=function(){
-
-pendingData = reader.result;
-
-// preview 50%
-document.getElementById("previewArea").innerHTML=
-'<img class="preview" src="'+reader.result+'">';
-
+let base64 = reader.result.split(",")[1];
+sendFile(file.name,file.type,base64);
 };
 
 reader.readAsDataURL(file);
 
 });
 
-// chọn file
+// 📎 gửi file
 document.getElementById("file2").addEventListener("change",function(){
 
 let file=this.files[0];
 if(!file) return;
 
-// ⚠️ giới hạn file (tránh lỗi GAS)
-if(file.size > 2*1024*1024){
-alert("File quá lớn (>2MB)");
-return;
-}
-
 let reader=new FileReader();
 
 reader.onload=function(){
-
-pendingData = "FILE|"+file.name+"|"+reader.result;
-
-document.getElementById("previewArea").innerHTML=
-'<div class="fileBox">📎 '+escapeHtml(file.name)+' (nhấn Gửi để xác nhận)</div>';
-
+let base64 = reader.result.split(",")[1];
+sendFile(file.name,file.type,base64);
 };
 
 reader.readAsDataURL(file);

@@ -7,73 +7,20 @@
 
 <style>
 *{box-sizing:border-box;}
-body{
-margin:0;
-font-family:-apple-system,BlinkMacSystemFont,Arial;
-background:linear-gradient(to bottom,#e5ddd5,#d9e6f2);
-display:flex;
-flex-direction:column;
-height:100vh;
-}
-#top{
-flex:1;
-overflow:auto;
-padding:12px;
-display:flex;
-flex-direction:column;
-}
-.msg{
-max-width:75%;
-padding:10px 14px;
-margin:6px 0;
-border-radius:18px;
-word-wrap:break-word;
-box-shadow:0 2px 6px rgba(0,0,0,0.08);
-}
-.left{
-background:white;
-align-self:flex-start;
-border-bottom-left-radius:5px;
-}
-.right{
-background:linear-gradient(135deg,#0084ff,#00c6ff);
-color:white;
-align-self:flex-end;
-border-bottom-right-radius:5px;
-}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Arial;background:linear-gradient(to bottom,#e5ddd5,#d9e6f2);display:flex;flex-direction:column;height:100vh;}
+#top{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;}
+.msg{max-width:75%;padding:10px 14px;margin:6px 0;border-radius:18px;word-wrap:break-word;box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+.left{background:white;align-self:flex-start;border-bottom-left-radius:5px;}
+.right{background:linear-gradient(135deg,#0084ff,#00c6ff);color:white;align-self:flex-end;border-bottom-right-radius:5px;}
 .msg b{font-size:12px;opacity:0.7;}
 .time{font-size:10px;opacity:0.6;text-align:right;margin-top:4px;}
 img{max-width:100%;border-radius:10px;margin-top:6px;}
-.fileBox{
-margin-top:6px;
-padding:8px;
-background:#f1f1f1;
-border-radius:8px;
-font-size:14px;
-}
+.fileBox{margin-top:6px;padding:8px;background:#f1f1f1;border-radius:8px;font-size:14px;}
 .fileBox a{color:#007bff;text-decoration:none;}
 .right .fileBox{background:rgba(255,255,255,0.2);}
-#bottom{
-display:flex;
-padding:10px;
-background:rgba(255,255,255,0.9);
-border-top:1px solid #ddd;
-}
-#text{
-flex:1;
-padding:12px;
-border-radius:25px;
-border:1px solid #ccc;
-font-size:16px;
-}
-button{
-margin-left:6px;
-padding:0 14px;
-border:none;
-background:#0084ff;
-color:white;
-border-radius:25px;
-}
+#bottom{display:flex;padding:10px;background:rgba(255,255,255,0.9);border-top:1px solid #ddd;}
+#text{flex:1;padding:12px;border-radius:25px;border:1px solid #ccc;font-size:16px;}
+button{margin-left:6px;padding:0 14px;border:none;background:#0084ff;color:white;border-radius:25px;}
 #file,#file2{display:none;}
 </style>
 </head>
@@ -93,13 +40,10 @@ border-radius:25px;
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycby8WOgq4UURTdZroiXvfjBvS-SIlyxLTzWxeV4LBZjgtcSqZqVdtVKvWzymaCBLCmFg/exec";
+const API="https://script.google.com/macros/s/AKfycbxlSuV1kSbLTESDKP-63z4HZRpYaXCHGTDGq03HUYeHTnaDzu-C8QB-xl2PrlA-K2UD/exec";
 
-let username=localStorage.getItem("name");
-if(!username){
-username=prompt("Tên của bạn:");
+let username=localStorage.getItem("name") || prompt("Tên bạn:");
 localStorage.setItem("name",username);
-}
 
 // LOAD
 async function load(){
@@ -114,29 +58,23 @@ top.innerHTML="";
 data.forEach(row=>{
 
 let msg=row.message||"";
-
-let name="";
-let text=msg;
+let name="", text=msg;
 
 let i=msg.indexOf(":");
-if(i!=-1){
-name=msg.substring(0,i);
-text=msg.substring(i+1);
-}
+if(i!=-1){ name=msg.substring(0,i); text=msg.substring(i+1); }
 
 let me=name==username;
-
 let div=document.createElement("div");
 div.className="msg "+(me?"right":"left");
 
 let content="";
 
 if(text.startsWith("FILE|")){
-let parts=text.split("|");
-let filename=parts[1];
-let url=parts[2];
+let p=text.split("|");
+let filename=p[1];
+let url=p[2];
 
-if(url.match(/\.(jpg|jpeg|png|gif|webp)$/i)){
+if(url.includes("googleusercontent")){
 content='<img src="'+url+'">';
 }else{
 content=`📎 ${filename}<br><a href="${url}" target="_blank">Tải xuống</a>`;
@@ -146,13 +84,10 @@ content=`📎 ${filename}<br><a href="${url}" target="_blank">Tải xuống</a>`
 content=text;
 }
 
-div.innerHTML=
-(me?"":"<b>"+name+"</b><br>")
-+content+
+div.innerHTML=(me?"":"<b>"+name+"</b><br>")+content+
 '<div class="time">'+row.time+'</div>';
 
 top.appendChild(div);
-
 });
 
 top.scrollTop=top.scrollHeight;
@@ -160,13 +95,13 @@ top.scrollTop=top.scrollHeight;
 
 // SEND TEXT
 async function send(){
-let t=text.value.trim();
-if(!t) return;
+if(!text.value.trim()) return;
 
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-message:username+":"+t
+name:username,
+text:text.value
 })
 });
 
@@ -174,28 +109,28 @@ text.value="";
 load();
 }
 
-// FILE → BASE64
-function toBase64(file){
-return new Promise((res,rej)=>{
-let r=new FileReader();
-r.onload=()=>res(r.result);
-r.onerror=rej;
-r.readAsDataURL(file);
-});
-}
+// UPLOAD FILE (KHÔNG BASE64)
+async function upload(file){
 
-// UPLOAD
-async function upload(f){
-let base64=await toBase64(f);
+let reader=new FileReader();
+
+reader.onload=async function(){
+let base64=reader.result.split(",")[1];
 
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-message:username+":BASE64|"+f.name+"|"+f.type+"|"+base64.split(",")[1]
+name:username,
+filename:file.name,
+type:file.type,
+file:base64
 })
 });
 
 load();
+};
+
+reader.readAsDataURL(file);
 }
 
 file.onchange=()=>file.files[0]&&upload(file.files[0]);

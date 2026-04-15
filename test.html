@@ -138,7 +138,7 @@ text-decoration:underline;
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbzld6Ap1Yb8azgylAmvYztcMSpWTLsyIS_btHmcTfXEg47OWsQV608BRr0srfwkFBG6/exec";
+const API="https://script.google.com/macros/s/AKfycbw1dx_MIJtO91_4t-05iTUKU5wG6_g7A1McauyxxEk5FgrsEFDrDti6wsUNV_Q4a205/exec";
 
 let username=localStorage.getItem("name");
 if(!username){
@@ -162,16 +162,12 @@ return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
-// TIME từ cột D
+// 🔥 TIME: LẤY NGUYÊN GIÁ TRỊ CỘT D
 function formatTime(t){
-if(!t) return "--:--";
-if(typeof t==="string" && t.includes("T")){
-return t.split("T")[1].substring(0,5);
-}
-return t.substring(0,5);
+return t || "--:--";
 }
 
-// scroll check
+// scroll
 function isAtBottom(el){
 return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
 }
@@ -211,20 +207,20 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
-// 📷 ảnh
+// ảnh
 if(text.startsWith("data:image")){
 content='<img src="'+text+'">';
 
-// 📎 file
+// file
 }else if(text.startsWith("FILE|")){
 let parts=text.split("|");
 let filename=parts[1];
-let data=parts[2];
+let filedata=parts[2];
 
 content=`
 <div class="fileBox">
 📎 ${escapeHtml(filename)}<br>
-<a href="${data}" download="${filename}">Tải xuống</a>
+<a href="${filedata}" download="${filename}">Tải xuống</a>
 </div>
 `;
 
@@ -235,7 +231,7 @@ content=makeLink(text);
 div.innerHTML=
 (me?"":"<b>"+escapeHtml(name)+"</b><br>")
 +content+
-'<div class="time">'+formatTime(row[3])+'</div>';
+'<div class="time">'+formatTime(row.time)+'</div>';
 
 top.appendChild(div);
 
@@ -264,7 +260,7 @@ input.value="";
 load();
 }
 
-// 📷 gửi ảnh
+// gửi ảnh
 document.getElementById("file").addEventListener("change",function(){
 
 let file=this.files[0];
@@ -286,7 +282,7 @@ reader.readAsDataURL(file);
 
 });
 
-// 📎 gửi file
+// gửi file
 document.getElementById("file2").addEventListener("change",function(){
 
 let file=this.files[0];

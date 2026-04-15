@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Mini</title>
+<title>Chat Mini Pro</title>
 
 <style>
 *{box-sizing:border-box;}
@@ -17,6 +17,7 @@ flex-direction:column;
 height:100vh;
 }
 
+/* CHAT */
 #top{
 flex:1;
 overflow:auto;
@@ -37,14 +38,12 @@ box-shadow:0 2px 6px rgba(0,0,0,0.08);
 .left{
 background:white;
 align-self:flex-start;
-border-bottom-left-radius:5px;
 }
 
 .right{
 background:linear-gradient(135deg,#0084ff,#00c6ff);
 color:white;
 align-self:flex-end;
-border-bottom-right-radius:5px;
 }
 
 .msg b{
@@ -65,27 +64,29 @@ border-radius:10px;
 margin-top:6px;
 }
 
+/* PREVIEW 50% */
+.preview img{
+max-width:50%;
+border:2px dashed #ccc;
+}
+
+/* FILE */
 .fileBox{
 margin-top:6px;
 padding:8px;
 background:#f1f1f1;
 border-radius:8px;
-font-size:14px;
-}
-
-.fileBox a{
-color:#007bff;
-text-decoration:none;
 }
 
 .right .fileBox{
 background:rgba(255,255,255,0.2);
 }
 
+/* INPUT */
 #bottom{
 display:flex;
 padding:10px;
-background:rgba(255,255,255,0.9);
+background:#fff;
 border-top:1px solid #ddd;
 }
 
@@ -94,7 +95,6 @@ flex:1;
 padding:12px;
 border-radius:25px;
 border:1px solid #ccc;
-font-size:16px;
 }
 
 button{
@@ -104,19 +104,10 @@ border:none;
 background:#0084ff;
 color:white;
 border-radius:25px;
+cursor:pointer;
 }
 
 #file,#file2{display:none;}
-
-a{
-color:#0b93f6;
-word-break:break-all;
-}
-
-.right a{
-color:#fff;
-text-decoration:underline;
-}
 </style>
 </head>
 
@@ -124,14 +115,16 @@ text-decoration:underline;
 
 <div id="top"></div>
 
+<div id="preview"></div>
+
 <div id="bottom">
 <input id="text" placeholder="Nhập tin...">
 
 <input type="file" id="file" accept="image/*">
-<button onclick="document.getElementById('file').click()">📷</button>
+<button onclick="pickImage()">📷</button>
 
 <input type="file" id="file2">
-<button onclick="document.getElementById('file2').click()">📎</button>
+<button onclick="pickFile()">📎</button>
 
 <button onclick="send()">Gửi</button>
 </div>
@@ -147,36 +140,36 @@ localStorage.setItem("name",username);
 }
 
 let lastData="";
+let pendingFile=null;
 
-// escape
+// ===== escape =====
 function escapeHtml(t){
 return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// link
+// ===== link =====
 function makeLink(t){
-let s=escapeHtml(t);
-return s.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
+return t.replace(/((https?:\/\/)?[^\s]+\.[^\s]+)/g,function(url){
 let href=url.startsWith("http")?url:"https://"+url;
 return '<a href="'+href+'" target="_blank">'+url+'</a>';
 });
 }
 
-// 🔥 TIME: LẤY NGUYÊN GIÁ TRỊ CỘT D
+// ===== TIME (giữ nguyên cột D) =====
 function formatTime(t){
 return t || "--:--";
 }
 
-// scroll
-function isAtBottom(el){
+// ===== scroll =====
+function isBottom(el){
 return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
 }
 
-// LOAD
+// ===== LOAD =====
 async function load(){
 
 let top=document.getElementById("top");
-let stayBottom=isAtBottom(top);
+let stay=isBottom(top);
 
 let res=await fetch(API+"?t="+Date.now());
 let data=await res.json();
@@ -191,8 +184,7 @@ data.forEach(row=>{
 
 let msg=row.message||"";
 
-let name="";
-let text=msg;
+let name="", text=msg;
 
 let i=msg.indexOf(":");
 if(i!=-1){
@@ -207,25 +199,23 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
-// ảnh
-if(text.startsWith("data:image")){
-content='<img src="'+text+'">';
+// ===== IMAGE =====
+if(text.startsWith("FILE|") && text.match(/\.(jpg|png|jpeg|gif)/i)){
+let p=text.split("|");
+content='<img src="'+p[2]+'">';
 
-// file
+// ===== FILE =====
 }else if(text.startsWith("FILE|")){
-let parts=text.split("|");
-let filename=parts[1];
-let filedata=parts[2];
-
+let p=text.split("|");
 content=`
 <div class="fileBox">
-📎 ${escapeHtml(filename)}<br>
-<a href="${filedata}" download="${filename}">Tải xuống</a>
-</div>
-`;
+📎 ${escapeHtml(p[1])}<br>
+<a href="${p[2]}" target="_blank">Tải</a>
+</div>`;
 
+// ===== TEXT =====
 }else{
-content=makeLink(text);
+content=makeLink(escapeHtml(text));
 }
 
 div.innerHTML=
@@ -237,16 +227,24 @@ top.appendChild(div);
 
 });
 
-if(stayBottom){
-top.scrollTop=top.scrollHeight;
+if(stay) top.scrollTop=top.scrollHeight;
 }
 
-}
-
-// gửi text
+// ===== SEND TEXT =====
 async function send(){
+
 let input=document.getElementById("text");
 let text=input.value.trim();
+
+if(pendingFile){
+if(!confirm("Gửi file này?")) return;
+
+await sendFile(pendingFile);
+pendingFile=null;
+document.getElementById("preview").innerHTML="";
+return;
+}
+
 if(!text) return;
 
 await fetch(API,{
@@ -260,53 +258,72 @@ input.value="";
 load();
 }
 
-// gửi ảnh
-document.getElementById("file").addEventListener("change",function(){
+// ===== PICK IMAGE =====
+function pickImage(){
+document.getElementById("file").click();
+}
+
+document.getElementById("file").onchange=function(){
 
 let file=this.files[0];
 if(!file) return;
 
 let reader=new FileReader();
 
-reader.onload=async function(){
-await fetch(API,{
-method:"POST",
-body:new URLSearchParams({
-message:username+":"+reader.result
-})
-});
-load();
+reader.onload=function(){
+pendingFile={
+name:file.name,
+type:file.type,
+base64:reader.result.split(",")[1]
+};
+
+document.getElementById("preview").innerHTML=
+'<div class="preview"><img src="'+reader.result+'"></div>';
 };
 
 reader.readAsDataURL(file);
+};
 
-});
+// ===== PICK FILE =====
+function pickFile(){
+document.getElementById("file2").click();
+}
 
-// gửi file
-document.getElementById("file2").addEventListener("change",function(){
+document.getElementById("file2").onchange=function(){
 
 let file=this.files[0];
 if(!file) return;
 
 let reader=new FileReader();
 
-reader.onload=async function(){
+reader.onload=function(){
+pendingFile={
+name:file.name,
+type:file.type,
+base64:reader.result.split(",")[1]
+};
+
+document.getElementById("preview").innerHTML=
+'<div class="preview">📎 '+escapeHtml(file.name)+'</div>';
+};
+
+reader.readAsDataURL(file);
+};
+
+// ===== SEND FILE =====
+async function sendFile(f){
 
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-message:username+":FILE|"+file.name+"|"+reader.result
+message:username+":BASE64|"+f.name+"|"+f.type+"|"+f.base64
 })
 });
 
 load();
-};
+}
 
-reader.readAsDataURL(file);
-
-});
-
-// enter
+// ===== ENTER =====
 document.getElementById("text").addEventListener("keypress",function(e){
 if(e.key==="Enter") send();
 });

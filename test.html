@@ -98,8 +98,7 @@ a{color:#0b93f6;word-break:break-all;}
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbxdIGQHBiFtiJmFMgYwBkclxyZnbND8FpkwNj8_bSANyWAS2zjwbxoyUR7ZVtxB4eSp/exec";
-const UPLOAD_API=API+"?action=upload"; // cần sửa GAS nếu dùng
+const API="https://script.google.com/macros/s/AKfycbxJQXN_p7CV9TqPtNb-dq4IOKSKrbph1h6foqV2RNL3bx1j1pT64L4j1zInA-7ZrZeS/exec";
 
 let username=localStorage.getItem("name");
 if(!username){
@@ -127,6 +126,7 @@ return url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
 
 async function load(){
 let top=document.getElementById("top");
+
 let res=await fetch(API+"?t="+Date.now());
 let data=await res.json();
 
@@ -137,6 +137,7 @@ lastData=json;
 top.innerHTML="";
 
 data.forEach(row=>{
+
 let msg=row.message||"";
 
 let name="";
@@ -155,6 +156,7 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
+// FILE
 if(text.startsWith("FILE|")){
 let parts=text.split("|");
 let filename=parts[1];
@@ -170,6 +172,7 @@ content=`
 </div>`;
 }
 
+// TEXT
 }else{
 content=makeLink(text);
 }
@@ -180,12 +183,13 @@ div.innerHTML=
 '<div class="time">'+(row.time||"--")+'</div>';
 
 top.appendChild(div);
+
 });
 
 top.scrollTop=top.scrollHeight;
 }
 
-// ===== SEND TEXT =====
+// ===== GỬI TEXT =====
 async function send(){
 let text=document.getElementById("text").value.trim();
 if(!text) return;
@@ -201,21 +205,7 @@ document.getElementById("text").value="";
 load();
 }
 
-// ===== UPLOAD FILE =====
-async function upload(file){
-
-let base64 = await toBase64(file);
-
-let res = await fetch(API,{
-method:"POST",
-body:new URLSearchParams({
-message: "BASE64|"+file.name+"|"+file.type+"|"+base64.split(",")[1]
-})
-});
-
-return "done";
-}
-
+// ===== BASE64 =====
 function toBase64(file){
 return new Promise((resolve,reject)=>{
 let reader=new FileReader();
@@ -225,24 +215,36 @@ reader.onerror=error=>reject(error);
 });
 }
 
-// ảnh
-file.addEventListener("change",async function(){
-let f=this.files[0];
-if(!f) return;
+// ===== UPLOAD =====
+async function upload(file){
 
-await upload(f);
+if(file.size > 15 * 1024 * 1024){
+alert("File quá lớn (>15MB)");
+return;
+}
+
+let base64 = await toBase64(file);
+
+await fetch(API,{
+method:"POST",
+body:new URLSearchParams({
+message: username + ":BASE64|" + file.name + "|" + file.type + "|" + base64.split(",")[1]
+})
+});
 
 load();
+}
+
+// ảnh
+file.addEventListener("change",function(){
+let f=this.files[0];
+if(f) upload(f);
 });
 
 // file
-file2.addEventListener("change",async function(){
+file2.addEventListener("change",function(){
 let f=this.files[0];
-if(!f) return;
-
-await upload(f);
-
-load();
+if(f) upload(f);
 });
 
 // enter

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Mini</title>
+<title>Chat Mini Pro</title>
 
 <style>
 *{box-sizing:border-box;}
@@ -17,12 +17,14 @@ flex-direction:column;
 height:100vh;
 }
 
+/* ===== KHUNG CHAT ===== */
 #top{
 flex:1;
 overflow:auto;
 padding:12px;
 display:flex;
 flex-direction:column;
+scroll-behavior:smooth;
 }
 
 .msg{
@@ -59,12 +61,14 @@ text-align:right;
 margin-top:4px;
 }
 
+/* ===== ẢNH ===== */
 img{
 max-width:100%;
 border-radius:10px;
 margin-top:6px;
 }
 
+/* ===== FILE ===== */
 .fileBox{
 margin-top:6px;
 padding:8px;
@@ -82,6 +86,7 @@ text-decoration:none;
 background:rgba(255,255,255,0.2);
 }
 
+/* ===== INPUT ===== */
 #bottom{
 display:flex;
 padding:10px;
@@ -95,6 +100,7 @@ padding:12px;
 border-radius:25px;
 border:1px solid #ccc;
 font-size:16px;
+outline:none;
 }
 
 button{
@@ -104,6 +110,11 @@ border:none;
 background:#0084ff;
 color:white;
 border-radius:25px;
+cursor:pointer;
+}
+
+button:hover{
+opacity:0.85;
 }
 
 #file,#file2{display:none;}
@@ -130,6 +141,7 @@ border-radius:25px;
 
 const API="https://script.google.com/macros/s/AKfycbxMR_QeBL200s574iT2X5v2b4ziYTrYr2GRxOq_IQm_ScS4GhWV5uGFujSZKJrUQSM_/exec";
 
+// ===== USER =====
 let username=localStorage.getItem("name");
 if(!username){
 username=prompt("Tên của bạn:");
@@ -139,7 +151,6 @@ localStorage.setItem("name",username);
 // ===== LOAD =====
 async function load(){
 try{
-
 let res=await fetch(API+"?t="+Date.now());
 let data=await res.json();
 
@@ -149,12 +160,11 @@ let top=document.getElementById("top");
 top.innerHTML="";
 
 data.forEach(row=>{
-
 let msg=row.message||"";
 let name=row.name||"";
+let time=row.time||"";
 
-let text=msg.includes(":") ? msg.split(":")[1] : msg;
-
+let text=msg.includes(":") ? msg.split(":").slice(1).join(":") : msg;
 let me=name===username;
 
 let div=document.createElement("div");
@@ -162,37 +172,55 @@ div.className="msg "+(me?"right":"left");
 
 let content="";
 
-// ===== FILE =====
+// ===== FILE BASE64 =====
 if(text.startsWith("FILE|")){
-let p=text.split("|");
-let filename=p[1];
-let url=p[2];
+let [_, filename, url] = text.split("|");
 
-// hiển thị ảnh
-if(url.includes("drive")){
-content='<img src="'+url+'">';
+// ảnh
+if(url.match(/\.(jpg|jpeg|png|gif|webp)$/i)){
+content = `<img src="${url}">`;
 }else{
-content=`
+content = `
 <div class="fileBox">
 📎 ${filename}<br>
 <a href="${url}" target="_blank">Tải xuống</a>
 </div>`;
 }
 
-}else{
-content=text;
 }
 
-div.innerHTML=
+// ===== BASE64 SERVER =====
+else if(text.startsWith("BASE64|")){
+let [_, filename, type, base64] = text.split("|");
+
+if(type.startsWith("image")){
+content = `<img src="data:${type};base64,${base64}">`;
+}else{
+content = `
+<div class="fileBox">
+📎 ${filename}<br>
+<a download="${filename}" href="data:${type};base64,${base64}">
+Tải xuống
+</a>
+</div>`;
+}
+
+}
+
+// ===== TEXT =====
+else{
+content = text;
+}
+
+div.innerHTML =
 (me?"":"<b>"+name+"</b><br>")
 +content+
-'<div class="time">'+(row.time||"")+'</div>';
+`<div class="time">${time}</div>`;
 
 top.appendChild(div);
-
 });
 
-top.scrollTop=top.scrollHeight;
+top.scrollTop = top.scrollHeight;
 
 }catch(e){
 console.log("Lỗi load:",e);
@@ -218,23 +246,25 @@ load();
 // ===== BASE64 =====
 function toBase64(file){
 return new Promise((res,rej)=>{
-let r=new FileReader();
-r.onload=()=>res(r.result);
-r.onerror=rej;
-r.readAsDataURL(file);
+let reader=new FileReader();
+reader.onload=()=>res(reader.result);
+reader.onerror=rej;
+reader.readAsDataURL(file);
 });
 }
 
 // ===== UPLOAD =====
 async function upload(file){
 try{
-
 let base64=await toBase64(file);
+
+// cắt phần data:
+let pure = base64.split(",")[1];
 
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-message:username+":BASE64|"+file.name+"|"+file.type+"|"+base64.split(",")[1]
+message:username+":BASE64|"+file.name+"|"+file.type+"|"+pure
 })
 });
 
@@ -245,6 +275,7 @@ alert("Upload lỗi");
 }
 }
 
+// ===== EVENT =====
 file.onchange=()=>file.files[0]&&upload(file.files[0]);
 file2.onchange=()=>file2.files[0]&&upload(file2.files[0]);
 
@@ -252,6 +283,7 @@ document.getElementById("text").addEventListener("keypress",e=>{
 if(e.key==="Enter") send();
 });
 
+// auto load
 setInterval(load,2000);
 load();
 

@@ -3,121 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Mini Pro</title>
+<title>Chat Drive</title>
 
 <style>
-*{box-sizing:border-box;}
-
 body{
 margin:0;
 font-family:Arial;
-background:linear-gradient(to bottom,#e5ddd5,#d9e6f2);
 display:flex;
 flex-direction:column;
 height:100vh;
+background:#e5ddd5;
 }
 
-/* ===== KHUNG CHAT ===== */
 #top{
 flex:1;
 overflow:auto;
-padding:12px;
+padding:10px;
 display:flex;
 flex-direction:column;
-scroll-behavior:smooth;
 }
 
 .msg{
-max-width:75%;
-padding:10px 14px;
-margin:6px 0;
-border-radius:18px;
-word-wrap:break-word;
-box-shadow:0 2px 6px rgba(0,0,0,0.08);
-}
-
-.left{
-background:white;
-align-self:flex-start;
-border-bottom-left-radius:5px;
-}
-
-.right{
-background:linear-gradient(135deg,#0084ff,#00c6ff);
-color:white;
-align-self:flex-end;
-border-bottom-right-radius:5px;
-}
-
-.msg b{
-font-size:12px;
-opacity:0.7;
-}
-
-.time{
-font-size:10px;
-opacity:0.6;
-text-align:right;
-margin-top:4px;
-}
-
-/* ===== ẢNH ===== */
-img{
-max-width:100%;
+max-width:70%;
+padding:10px;
+margin:5px;
 border-radius:10px;
-margin-top:6px;
 }
 
-/* ===== FILE ===== */
-.fileBox{
-margin-top:6px;
-padding:8px;
-background:#f1f1f1;
-border-radius:8px;
-font-size:14px;
+.left{background:#fff;align-self:flex-start;}
+.right{background:#0084ff;color:#fff;align-self:flex-end;}
+
+img{max-width:100%;border-radius:8px;}
+
+.file{
+background:#eee;
+padding:5px;
+border-radius:5px;
+margin-top:5px;
 }
 
-.fileBox a{
-color:#007bff;
-text-decoration:none;
-}
-
-.right .fileBox{
-background:rgba(255,255,255,0.2);
-}
-
-/* ===== INPUT ===== */
 #bottom{
 display:flex;
 padding:10px;
-background:rgba(255,255,255,0.9);
-border-top:1px solid #ddd;
+background:#fff;
 }
 
 #text{
 flex:1;
-padding:12px;
-border-radius:25px;
-border:1px solid #ccc;
-font-size:16px;
-outline:none;
+padding:10px;
 }
 
-button{
-margin-left:6px;
-padding:0 14px;
-border:none;
-background:#0084ff;
-color:white;
-border-radius:25px;
-cursor:pointer;
-}
-
-button:hover{
-opacity:0.85;
-}
-
-#file,#file2{display:none;}
+button{margin-left:5px;}
+#file{display:none;}
 </style>
 </head>
 
@@ -127,115 +64,70 @@ opacity:0.85;
 
 <div id="bottom">
 <input id="text" placeholder="Nhập tin...">
-
-<input type="file" id="file" accept="image/*">
-<button onclick="file.click()">📷</button>
-
-<input type="file" id="file2">
-<button onclick="file2.click()">📎</button>
-
+<input type="file" id="file">
+<button onclick="file.click()">📎</button>
 <button onclick="send()">Gửi</button>
 </div>
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbxMR_QeBL200s574iT2X5v2b4ziYTrYr2GRxOq_IQm_ScS4GhWV5uGFujSZKJrUQSM_/exec";
+const API = "https://script.google.com/macros/s/AKfycbzg-a8lU1QdGoRRzfKPGRJmvk2jvAnErTknJsu-rf7Wu1qa3Zt5dt0X6OGFZku905mD/exec";
 
-// ===== USER =====
-let username=localStorage.getItem("name");
-if(!username){
-username=prompt("Tên của bạn:");
-localStorage.setItem("name",username);
+let name = localStorage.getItem("name");
+if(!name){
+name = prompt("Tên:");
+localStorage.setItem("name",name);
 }
 
 // ===== LOAD =====
 async function load(){
-try{
-let res=await fetch(API+"?t="+Date.now());
-let data=await res.json();
+let res = await fetch(API);
+let data = await res.json();
 
-if(!Array.isArray(data)) data=[];
+let top = document.getElementById("top");
+top.innerHTML = "";
 
-let top=document.getElementById("top");
-top.innerHTML="";
+data.forEach(r=>{
+let div = document.createElement("div");
+div.className = "msg " + (r.name===name?"right":"left");
 
-data.forEach(row=>{
-let msg=row.message||"";
-let name=row.name||"";
-let time=row.time||"";
+let content = "";
 
-let text=msg.includes(":") ? msg.split(":").slice(1).join(":") : msg;
-let me=name===username;
+// FILE
+if(r.message.startsWith("FILE|")){
+let p = r.message.split("|");
 
-let div=document.createElement("div");
-div.className="msg "+(me?"right":"left");
-
-let content="";
-
-// ===== FILE BASE64 =====
-if(text.startsWith("FILE|")){
-let [_, filename, url] = text.split("|");
-
-// ảnh
-if(url.match(/\.(jpg|jpeg|png|gif|webp)$/i)){
-content = `<img src="${url}">`;
+if(p[2].includes("uc?export=view")){
+content = `<img src="${p[2]}">`;
 }else{
-content = `
-<div class="fileBox">
-📎 ${filename}<br>
-<a href="${url}" target="_blank">Tải xuống</a>
+content = `<div class="file">
+📎 ${p[1]}<br>
+<a href="${p[2]}" target="_blank">Tải</a>
 </div>`;
 }
 
-}
-
-// ===== BASE64 SERVER =====
-else if(text.startsWith("BASE64|")){
-let [_, filename, type, base64] = text.split("|");
-
-if(type.startsWith("image")){
-content = `<img src="data:${type};base64,${base64}">`;
 }else{
-content = `
-<div class="fileBox">
-📎 ${filename}<br>
-<a download="${filename}" href="data:${type};base64,${base64}">
-Tải xuống
-</a>
-</div>`;
+content = r.message;
 }
 
-}
-
-// ===== TEXT =====
-else{
-content = text;
-}
-
-div.innerHTML =
-(me?"":"<b>"+name+"</b><br>")
-+content+
-`<div class="time">${time}</div>`;
+div.innerHTML = (r.name===name?"":"<b>"+r.name+"</b><br>") + content;
 
 top.appendChild(div);
 });
 
 top.scrollTop = top.scrollHeight;
-
-}catch(e){
-console.log("Lỗi load:",e);
-}
 }
 
 // ===== SEND TEXT =====
 async function send(){
-let text=document.getElementById("text").value.trim();
+let text = document.getElementById("text").value;
 if(!text) return;
 
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-message:username+":"+text
+name:name,
+message:text
 })
 });
 
@@ -243,47 +135,30 @@ document.getElementById("text").value="";
 load();
 }
 
-// ===== BASE64 =====
-function toBase64(file){
-return new Promise((res,rej)=>{
-let reader=new FileReader();
-reader.onload=()=>res(reader.result);
-reader.onerror=rej;
-reader.readAsDataURL(file);
-});
-}
+// ===== UPLOAD FILE =====
+file.onchange = async ()=>{
+let f = file.files[0];
 
-// ===== UPLOAD =====
-async function upload(file){
-try{
-let base64=await toBase64(file);
-
-// cắt phần data:
-let pure = base64.split(",")[1];
+let reader = new FileReader();
+reader.onload = async ()=>{
+let base64 = reader.result.split(",")[1];
 
 await fetch(API,{
 method:"POST",
 body:new URLSearchParams({
-message:username+":BASE64|"+file.name+"|"+file.type+"|"+pure
+name:name,
+filename:f.name,
+type:f.type,
+file:base64
 })
 });
 
 load();
+};
 
-}catch(e){
-alert("Upload lỗi");
-}
-}
+reader.readAsDataURL(f);
+};
 
-// ===== EVENT =====
-file.onchange=()=>file.files[0]&&upload(file.files[0]);
-file2.onchange=()=>file2.files[0]&&upload(file2.files[0]);
-
-document.getElementById("text").addEventListener("keypress",e=>{
-if(e.key==="Enter") send();
-});
-
-// auto load
 setInterval(load,2000);
 load();
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Drive Pro</title>
+<title>Chat Pro</title>
 
 <style>
 body{
@@ -24,10 +24,10 @@ flex-direction:column;
 }
 
 .msg{
-max-width:75%;
-padding:10px;
-margin:5px;
-border-radius:15px;
+max-width:70%;
+padding:10px 14px;
+margin:6px;
+border-radius:18px;
 word-wrap:break-word;
 }
 
@@ -41,18 +41,21 @@ margin-top:5px;
 }
 
 .file{
-background:#eee;
-padding:6px;
-border-radius:6px;
 margin-top:5px;
+padding:8px;
+border-radius:8px;
+background:#eee;
 }
 
-.right .file{background:rgba(255,255,255,0.2);}
+.right .file{
+background:rgba(255,255,255,0.2);
+}
 
 #bottom{
 display:flex;
 padding:10px;
 background:#fff;
+border-top:1px solid #ccc;
 }
 
 #text{
@@ -60,17 +63,20 @@ flex:1;
 padding:10px;
 border-radius:20px;
 border:1px solid #ccc;
+outline:none;
 }
 
 button{
 margin-left:5px;
-padding:6px 10px;
 border:none;
 background:#0084ff;
 color:#fff;
-border-radius:10px;
+padding:8px 12px;
+border-radius:20px;
 cursor:pointer;
 }
+
+button:hover{opacity:0.8;}
 
 #file{display:none;}
 </style>
@@ -82,16 +88,20 @@ cursor:pointer;
 
 <div id="bottom">
 <input id="text" placeholder="Nhập tin...">
-
 <input type="file" id="file">
-<button onclick="file.click()">📎</button>
-
+<button id="btnFile">📎</button>
 <button onclick="send()">Gửi</button>
 </div>
 
 <script>
 
-const API = "https://script.google.com/macros/s/AKfycbyZ75iqW8BeunY3hVVXAs9oaEouHOESj-4JYXMJgEOpy4olTTBFcQXrvWFmCcNGUfzf/exec";
+const API = "https://script.google.com/macros/s/AKfycbzTnKOZpwMs-Yqgl3aecGwPxpfSiTGsyawDIFLPgcpnL8Q4UCLHkGjJ-ttisQh4Zwum/exec";
+
+const fileInput = document.getElementById("file");
+const btnFile = document.getElementById("btnFile");
+const topDiv = document.getElementById("top");
+
+btnFile.onclick = ()=> fileInput.click();
 
 let name = localStorage.getItem("name");
 if(!name){
@@ -104,8 +114,7 @@ async function load(){
 let res = await fetch(API+"?t="+Date.now());
 let data = await res.json();
 
-let top = document.getElementById("top");
-top.innerHTML = "";
+topDiv.innerHTML = "";
 
 data.forEach(r=>{
 let div = document.createElement("div");
@@ -148,13 +157,13 @@ div.innerHTML =
 content +
 `<div style="font-size:10px;opacity:0.6;text-align:right;">${r.time}</div>`;
 
-top.appendChild(div);
+topDiv.appendChild(div);
 });
 
-top.scrollTop = top.scrollHeight;
+topDiv.scrollTop = topDiv.scrollHeight;
 }
 
-// ===== SEND TEXT =====
+// ===== SEND =====
 async function send(){
 let text = document.getElementById("text").value.trim();
 if(!text) return;
@@ -172,8 +181,8 @@ load();
 }
 
 // ===== UPLOAD =====
-file.onchange = async ()=>{
-let f = file.files[0];
+fileInput.onchange = async ()=>{
+let f = fileInput.files[0];
 if(!f) return;
 
 let reader = new FileReader();
@@ -202,6 +211,7 @@ document.getElementById("text").addEventListener("keypress",e=>{
 if(e.key==="Enter") send();
 });
 
+// AUTO LOAD
 setInterval(load,2000);
 load();
 

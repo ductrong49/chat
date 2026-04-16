@@ -24,11 +24,12 @@ flex-direction:column;
 }
 
 .msg{
-max-width:70%;
+max-width:75%;
 padding:10px 14px;
 margin:6px;
 border-radius:18px;
 word-wrap:break-word;
+box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
 
 .left{background:#fff;align-self:flex-start;}
@@ -64,6 +65,7 @@ padding:10px;
 border-radius:20px;
 border:1px solid #ccc;
 outline:none;
+font-size:15px;
 }
 
 button{
@@ -76,9 +78,16 @@ border-radius:20px;
 cursor:pointer;
 }
 
-button:hover{opacity:0.8;}
+button:hover{opacity:0.85;}
 
 #file{display:none;}
+
+.time{
+font-size:10px;
+opacity:0.6;
+text-align:right;
+margin-top:4px;
+}
 </style>
 </head>
 
@@ -103,6 +112,7 @@ const topDiv = document.getElementById("top");
 
 btnFile.onclick = ()=> fileInput.click();
 
+// ===== USER =====
 let name = localStorage.getItem("name");
 if(!name){
 name = prompt("Tên của bạn:");
@@ -111,6 +121,7 @@ localStorage.setItem("name",name);
 
 // ===== LOAD =====
 async function load(){
+try{
 let res = await fetch(API+"?t="+Date.now());
 let data = await res.json();
 
@@ -123,7 +134,7 @@ div.className = "msg " + (r.name===name?"right":"left");
 let content = "";
 
 // FILE
-if(r.message.startsWith("FILE|")){
+if(r.message && r.message.startsWith("FILE|")){
 let p = r.message.split("|");
 let filename = p[1];
 let view = p[2];
@@ -143,24 +154,28 @@ content = `
 }
 
 // LINK
-else if(r.message.startsWith("http")){
+else if(r.message && r.message.startsWith("http")){
 content = `<a href="${r.message}" target="_blank">${r.message}</a>`;
 }
 
 // TEXT
 else{
-content = r.message;
+content = r.message || "";
 }
 
 div.innerHTML =
 (r.name===name?"":"<b>"+r.name+"</b><br>") +
 content +
-`<div style="font-size:10px;opacity:0.6;text-align:right;">${r.time}</div>`;
+`<div class="time">${r.time || ""}</div>`;
 
 topDiv.appendChild(div);
 });
 
 topDiv.scrollTop = topDiv.scrollHeight;
+
+}catch(e){
+console.log("Lỗi load:",e);
+}
 }
 
 // ===== SEND =====
@@ -168,8 +183,12 @@ async function send(){
 let text = document.getElementById("text").value.trim();
 if(!text) return;
 
+try{
 await fetch(API,{
 method:"POST",
+headers:{
+"Content-Type":"application/x-www-form-urlencoded"
+},
 body:new URLSearchParams({
 name:name,
 message:text
@@ -178,6 +197,10 @@ message:text
 
 document.getElementById("text").value="";
 load();
+
+}catch(e){
+alert("Lỗi gửi tin");
+}
 }
 
 // ===== UPLOAD =====
@@ -190,8 +213,12 @@ let reader = new FileReader();
 reader.onload = async ()=>{
 let base64 = reader.result.split(",")[1];
 
+try{
 await fetch(API,{
 method:"POST",
+headers:{
+"Content-Type":"application/x-www-form-urlencoded"
+},
 body:new URLSearchParams({
 name:name,
 filename:f.name,
@@ -201,6 +228,10 @@ file:base64
 });
 
 load();
+
+}catch(e){
+alert("Upload lỗi");
+}
 };
 
 reader.readAsDataURL(f);
